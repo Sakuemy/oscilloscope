@@ -1,0 +1,568 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<title>Осциллограф</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+<style>
+  :root {
+    --bg:      #0d1117;
+    --surface: #161b22;
+    --card:    #1c2128;
+    --border:  #30363d;
+    --green:   #3fb950;
+    --green2:  #238636;
+    --blue:    #58a6ff;
+    --amber:   #d29922;
+    --red:     #f85149;
+    --text:    #e6edf3;
+    --muted:   #7d8590;
+    --radius:  10px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'SF Pro Display', -apple-system, 'Segoe UI', sans-serif;
+    font-size: 14px;
+    min-height: 100dvh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  header {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 12px 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+  }
+  .logo {
+    font-size: 16px;
+    font-weight: 600;
+    letter-spacing: -0.3px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .logo-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--muted);
+    transition: background .3s;
+  }
+  .logo-dot.live { background: var(--green); box-shadow: 0 0 6px var(--green); }
+
+  .status-pill {
+    font-size: 12px;
+    color: var(--muted);
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 4px 10px;
+  }
+  .status-pill.connected { color: var(--green); border-color: var(--green2); }
+  .status-pill.error     { color: var(--red);   border-color: var(--red); }
+
+  main { flex: 1; display: flex; flex-direction: column; padding: 12px; gap: 10px; }
+
+  .chart-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 10px;
+    position: relative;
+  }
+  .chart-meta {
+    display: flex;
+    justify-content: space-between;
+    font-size: 11px;
+    color: var(--muted);
+    margin-bottom: 8px;
+  }
+  .chart-meta span { font-variant-numeric: tabular-nums; }
+  canvas#scope { width: 100% !important; height: 220px !important; display: block; }
+
+  .stats-row {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+  }
+  .stat {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 8px 10px;
+    text-align: center;
+  }
+  .stat-label { font-size: 10px; color: var(--muted); margin-bottom: 4px; }
+  .stat-value { font-size: 15px; font-weight: 600; font-variant-numeric: tabular-nums; }
+  .stat-value.v-min  { color: var(--blue); }
+  .stat-value.v-max  { color: var(--amber); }
+  .stat-value.v-avg  { color: var(--green); }
+  .stat-value.v-freq { color: var(--text); }
+
+  .control-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 12px;
+  }
+  .control-title {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: .6px;
+    margin-bottom: 10px;
+  }
+
+  .range-tabs {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 12px;
+  }
+  .range-tab {
+    flex: 1;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--muted);
+    font-size: 12px;
+    font-weight: 600;
+    padding: 7px 0;
+    cursor: pointer;
+    transition: all .15s;
+  }
+  .range-tab.active {
+    background: var(--green2);
+    border-color: var(--green);
+    color: #fff;
+  }
+
+  .delay-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 10px;
+  }
+  .delay-row label { font-size: 12px; color: var(--muted); white-space: nowrap; }
+  .delay-row input[type=range] {
+    flex: 1;
+    accent-color: var(--green);
+    height: 4px;
+  }
+  .delay-val {
+    min-width: 54px;
+    text-align: right;
+    font-size: 14px;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    color: var(--text);
+  }
+
+  .delay-presets {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+    margin-bottom: 12px;
+  }
+  .preset-btn {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--muted);
+    font-size: 11px;
+    padding: 4px 10px;
+    cursor: pointer;
+    transition: all .15s;
+  }
+  .preset-btn:hover { border-color: var(--green); color: var(--green); }
+
+  .action-row { display: flex; gap: 8px; }
+  .btn {
+    flex: 1;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    font-size: 13px;
+    font-weight: 600;
+    padding: 10px;
+    cursor: pointer;
+    transition: all .15s;
+  }
+  .btn-connect {
+    background: var(--green2);
+    border-color: var(--green);
+    color: #fff;
+  }
+  .btn-connect:hover { background: #2ea043; }
+  .btn-connect.active {
+    background: transparent;
+    border-color: var(--red);
+    color: var(--red);
+  }
+  .btn-send {
+    background: transparent;
+    border-color: var(--blue);
+    color: var(--blue);
+  }
+  .btn-send:hover { background: rgba(88,166,255,.1); }
+  .btn-send:disabled { opacity: .35; cursor: not-allowed; }
+  .btn-pause {
+    background: transparent;
+    border-color: var(--amber);
+    color: var(--amber);
+    flex: 0 0 auto;
+    padding: 10px 14px;
+  }
+
+  .log-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 10px 12px;
+    font-family: 'SF Mono', 'Fira Code', monospace;
+    font-size: 11px;
+    color: var(--muted);
+    height: 80px;
+    overflow-y: auto;
+    line-height: 1.6;
+  }
+  .log-card .tx { color: var(--blue); }
+  .log-card .rx { color: var(--green); }
+  .log-card .err { color: var(--red); }
+
+  .no-serial-notice {
+    background: rgba(248,81,73,.08);
+    border: 1px solid rgba(248,81,73,.3);
+    border-radius: var(--radius);
+    padding: 10px 14px;
+    font-size: 12px;
+    color: var(--red);
+    display: none;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    <div class="logo-dot" id="liveDot"></div>
+    Осциллограф
+  </div>
+  <div class="status-pill" id="statusPill">Не подключено</div>
+</header>
+
+<main>
+  <div class="no-serial-notice" id="noSerialNotice">
+    ⚠ WebSerial API не поддерживается. Используйте Chrome или Edge на Android/ПК.
+  </div>
+
+  <div class="chart-card">
+    <div class="chart-meta">
+      <span id="metaPoints">512 точек</span>
+      <span id="metaDelay">задержка: 500 мкс</span>
+    </div>
+    <canvas id="scope"></canvas>
+  </div>
+
+  <div class="stats-row">
+    <div class="stat"><div class="stat-label">Min, В</div><div class="stat-value v-min" id="sMin">—</div></div>
+    <div class="stat"><div class="stat-label">Max, В</div><div class="stat-value v-max" id="sMax">—</div></div>
+    <div class="stat"><div class="stat-label">Avg, В</div><div class="stat-value v-avg" id="sAvg">—</div></div>
+    <div class="stat"><div class="stat-label">Vpp, В</div><div class="stat-value v-freq" id="sVpp">—</div></div>
+  </div>
+
+  <div class="control-card">
+    <div class="control-title">Задержка между сэмплами</div>
+
+    <div class="range-tabs">
+      <button class="range-tab active" data-range="US">мкс</button>
+      <button class="range-tab" data-range="MS">мс</button>
+      <button class="range-tab" data-range="S">сек</button>
+    </div>
+
+    <div class="delay-row">
+      <label>Задержка</label>
+      <input type="range" id="delaySlider" min="1" max="1000" value="500" step="1">
+      <div class="delay-val"><span id="delayNum">500</span> <span id="delayUnit">мкс</span></div>
+    </div>
+
+    <div class="delay-presets" id="presets"></div>
+
+    <div class="action-row">
+      <button class="btn btn-connect" id="btnConnect">Подключить USB</button>
+      <button class="btn btn-send" id="btnSend" disabled>Применить</button>
+      <button class="btn btn-pause" id="btnPause" title="Пауза">⏸</button>
+    </div>
+  </div>
+
+  <div class="log-card" id="log"></div>
+</main>
+
+<script>
+// ── Состояние ──────────────────────────────────────────────
+const NUM = 512;
+const VREF = 5.0;  // изменить на 3.3 для Nano 33
+
+let port = null, reader = null, writer = null;
+let connected = false, paused = false;
+let currentRange = 'US';
+let currentDelay = 500;
+let frameCount = 0;
+
+// ── Chart.js ───────────────────────────────────────────────
+const ctx = document.getElementById('scope').getContext('2d');
+const chart = new Chart(ctx, {
+  type: 'line',
+  data: {
+    labels: Array.from({length: NUM}, (_, i) => i),
+    datasets: [{
+      data: new Array(NUM).fill(0),
+      borderColor: '#3fb950',
+      borderWidth: 1.2,
+      pointRadius: 0,
+      tension: 0,
+      fill: false
+    }]
+  },
+  options: {
+    animation: false,
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: { legend: { display: false }, tooltip: { enabled: false } },
+    scales: {
+      x: {
+        display: false
+      },
+      y: {
+        min: 0, max: VREF,
+        ticks: {
+          color: '#7d8590',
+          font: { size: 10 },
+          callback: v => v.toFixed(1) + ' В',
+          maxTicksLimit: 6
+        },
+        grid: { color: 'rgba(255,255,255,0.05)' }
+      }
+    }
+  }
+});
+
+// ── Логгер ────────────────────────────────────────────────
+const logEl = document.getElementById('log');
+function log(text, cls='') {
+  const line = document.createElement('div');
+  if (cls) line.className = cls;
+  line.textContent = text;
+  logEl.appendChild(line);
+  while (logEl.children.length > 50) logEl.removeChild(logEl.firstChild);
+  logEl.scrollTop = logEl.scrollHeight;
+}
+
+// ── Статусбар ─────────────────────────────────────────────
+const pill = document.getElementById('statusPill');
+const dot  = document.getElementById('liveDot');
+const btn  = document.getElementById('btnConnect');
+function setStatus(s) {
+  pill.className = 'status-pill' + (s === 'ok' ? ' connected' : s === 'err' ? ' error' : '');
+  dot.className  = 'logo-dot' + (s === 'ok' ? ' live' : '');
+  if (s === 'ok') {
+    pill.textContent = 'Подключено';
+    btn.textContent  = 'Отключить';
+    btn.classList.add('active');
+  } else {
+    pill.textContent = s === 'err' ? 'Ошибка' : 'Не подключено';
+    btn.textContent  = 'Подключить USB';
+    btn.classList.remove('active');
+  }
+}
+
+// ── WebSerial check ──────────────────────────────────────
+if (!('serial' in navigator)) {
+  document.getElementById('noSerialNotice').style.display = 'block';
+}
+
+// ── Подключение ──────────────────────────────────────────
+btn.addEventListener('click', async () => {
+  if (connected) { await disconnect(); return; }
+  try {
+    port = await navigator.serial.requestPort();
+    await port.open({ baudRate: 115200, bufferSize: 65536 });
+    writer = port.writable.getWriter();
+    connected = true;
+    document.getElementById('btnSend').disabled = false;
+    setStatus('ok');
+    log('Порт открыт', 'rx');
+    readLoop();
+  } catch (e) {
+    log('Ошибка: ' + e.message, 'err');
+    setStatus('err');
+  }
+});
+
+async function disconnect() {
+  connected = false;
+  try {
+    if (reader) { await reader.cancel(); reader = null; }
+    if (writer) { writer.releaseLock(); writer = null; }
+    if (port)   { await port.close(); port = null; }
+  } catch(e) {}
+  document.getElementById('btnSend').disabled = true;
+  setStatus('');
+  log('Порт закрыт');
+}
+
+// ── Чтение Serial ─────────────────────────────────────────
+// Читаем сырые байты вручную — без pipeTo, чтобы избежать BufferOverrunError.
+// Буфер порта открыт с bufferSize=65536, данные забираем сразу после прихода.
+let lineBuffer = '';
+const textDecoder = new TextDecoder();
+
+async function readLoop() {
+  // Получаем reader напрямую из readable (без pipeTo)
+  reader = port.readable.getReader();
+  try {
+    while (connected) {
+      const { value, done } = await reader.read();
+      if (done) break;
+      // value — Uint8Array, декодируем на лету
+      lineBuffer += textDecoder.decode(value, { stream: true });
+      let nl;
+      while ((nl = lineBuffer.indexOf('\n')) !== -1) {
+        const line = lineBuffer.slice(0, nl).trim();
+        lineBuffer = lineBuffer.slice(nl + 1);
+        if (line.length) handleLine(line);
+      }
+      // Защита от бесконечного роста буфера при отсутствии \n
+      if (lineBuffer.length > 32768) lineBuffer = '';
+    }
+  } catch(e) {
+    if (connected) { log('Разрыв соединения: ' + e.message, 'err'); setStatus('err'); }
+  } finally {
+    try { reader.releaseLock(); } catch(_) {}
+    reader = null;
+  }
+}
+
+function handleLine(line) {
+  if (line.startsWith('DATA:')) {
+    if (paused) return;
+    const vals = line.slice(5).split(',').map(Number);
+    if (vals.length < 10) return;
+    const volts = vals.map(v => (v / 1023) * VREF);
+    chart.data.datasets[0].data = volts;
+    chart.update('none');
+    updateStats(volts);
+    frameCount++;
+    document.getElementById('metaPoints').textContent = vals.length + ' точек';
+  } else if (line.startsWith('OK:')) {
+    log('← ' + line, 'rx');
+    const parts = line.slice(3).split(':');
+    if (parts.length >= 2) {
+      currentDelay = parseInt(parts[0]);
+      currentRange = parts[1];
+      updateDelayUI();
+    }
+  } else if (line.length) {
+    log('← ' + line, 'rx');
+  }
+}
+
+// ── Статистика ────────────────────────────────────────────
+function updateStats(volts) {
+  const mn = Math.min(...volts), mx = Math.max(...volts);
+  const avg = volts.reduce((a,b)=>a+b,0) / volts.length;
+  document.getElementById('sMin').textContent = mn.toFixed(3);
+  document.getElementById('sMax').textContent = mx.toFixed(3);
+  document.getElementById('sAvg').textContent = avg.toFixed(3);
+  document.getElementById('sVpp').textContent = (mx - mn).toFixed(3);
+}
+
+// ── Диапазон ─────────────────────────────────────────────
+const RANGE_CFG = {
+  US: { label: 'мкс', min: 1, max: 16383, def: 500,
+        presets: [1, 10, 50, 100, 500, 1000, 5000] },
+  MS: { label: 'мс',  min: 1, max: 1000,  def: 10,
+        presets: [1, 5, 10, 50, 100, 500, 1000] },
+  S:  { label: 'сек', min: 1, max: 10,    def: 1,
+        presets: [1, 2, 3, 5, 10] }
+};
+
+function updateDelayUI() {
+  const cfg = RANGE_CFG[currentRange];
+  const slider = document.getElementById('delaySlider');
+  slider.min = cfg.min; slider.max = cfg.max;
+  slider.value = Math.min(Math.max(currentDelay, cfg.min), cfg.max);
+  document.getElementById('delayNum').textContent = slider.value;
+  document.getElementById('delayUnit').textContent = cfg.label;
+  document.getElementById('metaDelay').textContent =
+    'задержка: ' + slider.value + ' ' + cfg.label;
+
+  // presets
+  const box = document.getElementById('presets');
+  box.innerHTML = '';
+  cfg.presets.forEach(v => {
+    const b = document.createElement('button');
+    b.className = 'preset-btn';
+    b.textContent = v + ' ' + cfg.label;
+    b.onclick = () => {
+      slider.value = v;
+      document.getElementById('delayNum').textContent = v;
+      document.getElementById('metaDelay').textContent =
+        'задержка: ' + v + ' ' + cfg.label;
+    };
+    box.appendChild(b);
+  });
+
+  // highlight active tab
+  document.querySelectorAll('.range-tab').forEach(t => {
+    t.classList.toggle('active', t.dataset.range === currentRange);
+  });
+}
+
+document.querySelectorAll('.range-tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    currentRange = tab.dataset.range;
+    currentDelay = RANGE_CFG[currentRange].def;
+    updateDelayUI();
+  });
+});
+
+document.getElementById('delaySlider').addEventListener('input', e => {
+  document.getElementById('delayNum').textContent = e.target.value;
+  document.getElementById('metaDelay').textContent =
+    'задержка: ' + e.target.value + ' ' + RANGE_CFG[currentRange].label;
+});
+
+// ── Отправить настройки ──────────────────────────────────
+document.getElementById('btnSend').addEventListener('click', async () => {
+  if (!writer) return;
+  const val = document.getElementById('delaySlider').value;
+  await sendCmd('RANGE:' + currentRange);
+  await new Promise(r => setTimeout(r, 80));
+  await sendCmd('DELAY:' + val);
+  currentDelay = parseInt(val);
+});
+
+async function sendCmd(cmd) {
+  if (!writer) return;
+  const data = new TextEncoder().encode(cmd + '\n');
+  await writer.write(data);
+  log('→ ' + cmd, 'tx');
+}
+
+// ── Пауза ────────────────────────────────────────────────
+document.getElementById('btnPause').addEventListener('click', () => {
+  paused = !paused;
+  document.getElementById('btnPause').textContent = paused ? '▶' : '⏸';
+});
+
+// ── Init ─────────────────────────────────────────────────
+updateDelayUI();
+</script>
+</body>
+</html>
