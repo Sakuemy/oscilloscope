@@ -2,7 +2,7 @@
 <html lang="ru">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
 <title>Осциллограф</title>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
 <style>
@@ -18,63 +18,62 @@
     --red:     #f85149;
     --text:    #e6edf3;
     --muted:   #7d8590;
-    --radius:  10px;
+    --r:       10px;
   }
-  * { box-sizing: border-box; margin: 0; padding: 0; }
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
   body {
     background: var(--bg);
     color: var(--text);
-    font-family: 'SF Pro Display', -apple-system, 'Segoe UI', sans-serif;
+    font-family: -apple-system, 'Segoe UI', sans-serif;
     font-size: 14px;
     min-height: 100dvh;
     display: flex;
     flex-direction: column;
+    overscroll-behavior: none;
   }
 
+  /* ── Header ── */
   header {
     background: var(--surface);
     border-bottom: 1px solid var(--border);
-    padding: 12px 16px;
+    padding: 11px 14px;
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 10px;
-  }
-  .logo {
-    font-size: 16px;
-    font-weight: 600;
-    letter-spacing: -0.3px;
-    display: flex;
-    align-items: center;
     gap: 8px;
+    position: sticky; top: 0; z-index: 10;
   }
-  .logo-dot {
-    width: 8px; height: 8px;
-    border-radius: 50%;
-    background: var(--muted);
-    transition: background .3s;
+  .logo { font-size: 15px; font-weight: 700; display: flex; align-items: center; gap: 8px; }
+  .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--muted); transition: background .3s, box-shadow .3s; }
+  .dot.live { background: var(--green); box-shadow: 0 0 7px var(--green); }
+  .pill {
+    font-size: 11px; padding: 4px 10px; border-radius: 20px;
+    border: 1px solid var(--border); background: var(--card); color: var(--muted);
+    transition: all .2s;
   }
-  .logo-dot.live { background: var(--green); box-shadow: 0 0 6px var(--green); }
+  .pill.ok  { color: var(--green); border-color: var(--green2); }
+  .pill.err { color: var(--red);   border-color: var(--red); }
 
-  .status-pill {
+  /* ── Platform notice ── */
+  .notice {
+    margin: 10px 12px 0;
+    padding: 9px 13px;
+    border-radius: var(--r);
     font-size: 12px;
-    color: var(--muted);
-    background: var(--card);
-    border: 1px solid var(--border);
-    border-radius: 20px;
-    padding: 4px 10px;
+    line-height: 1.5;
   }
-  .status-pill.connected { color: var(--green); border-color: var(--green2); }
-  .status-pill.error     { color: var(--red);   border-color: var(--red); }
+  .notice.warn { background: rgba(210,153,34,.1); border: 1px solid rgba(210,153,34,.35); color: var(--amber); }
+  .notice.err  { background: rgba(248,81,73,.08); border: 1px solid rgba(248,81,73,.3);   color: var(--red); }
+  .notice.info { background: rgba(88,166,255,.08); border: 1px solid rgba(88,166,255,.25); color: var(--blue); }
 
-  main { flex: 1; display: flex; flex-direction: column; padding: 12px; gap: 10px; }
+  main { flex: 1; display: flex; flex-direction: column; padding: 10px 12px; gap: 10px; }
 
+  /* ── Chart ── */
   .chart-card {
     background: var(--card);
     border: 1px solid var(--border);
-    border-radius: var(--radius);
+    border-radius: var(--r);
     padding: 10px;
-    position: relative;
   }
   .chart-meta {
     display: flex;
@@ -82,241 +81,267 @@
     font-size: 11px;
     color: var(--muted);
     margin-bottom: 8px;
-  }
-  .chart-meta span { font-variant-numeric: tabular-nums; }
-  canvas#scope { width: 100% !important; height: 220px !important; display: block; }
-
-  .stats-row {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 8px;
-  }
-  .stat {
-    background: var(--card);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    padding: 8px 10px;
-    text-align: center;
-  }
-  .stat-label { font-size: 10px; color: var(--muted); margin-bottom: 4px; }
-  .stat-value { font-size: 15px; font-weight: 600; font-variant-numeric: tabular-nums; }
-  .stat-value.v-min  { color: var(--blue); }
-  .stat-value.v-max  { color: var(--amber); }
-  .stat-value.v-avg  { color: var(--green); }
-  .stat-value.v-freq { color: var(--text); }
-
-  .control-card {
-    background: var(--card);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    padding: 12px;
-  }
-  .control-title {
-    font-size: 11px;
-    font-weight: 600;
-    color: var(--muted);
-    text-transform: uppercase;
-    letter-spacing: .6px;
-    margin-bottom: 10px;
-  }
-
-  .range-tabs {
-    display: flex;
-    gap: 6px;
-    margin-bottom: 12px;
-  }
-  .range-tab {
-    flex: 1;
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 6px;
-    color: var(--muted);
-    font-size: 12px;
-    font-weight: 600;
-    padding: 7px 0;
-    cursor: pointer;
-    transition: all .15s;
-  }
-  .range-tab.active {
-    background: var(--green2);
-    border-color: var(--green);
-    color: #fff;
-  }
-
-  .delay-row {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    margin-bottom: 10px;
-  }
-  .delay-row label { font-size: 12px; color: var(--muted); white-space: nowrap; }
-  .delay-row input[type=range] {
-    flex: 1;
-    accent-color: var(--green);
-    height: 4px;
-  }
-  .delay-val {
-    min-width: 54px;
-    text-align: right;
-    font-size: 14px;
-    font-weight: 600;
-    font-variant-numeric: tabular-nums;
-    color: var(--text);
-  }
-
-  .delay-presets {
-    display: flex;
     gap: 6px;
     flex-wrap: wrap;
-    margin-bottom: 12px;
   }
-  .preset-btn {
+  .chart-meta .meta-time { color: var(--blue); font-weight: 600; }
+  canvas#scope { width: 100% !important; height: 200px !important; display: block; }
+
+  /* ── Stats ── */
+  .stats-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 7px; }
+  .stat {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: var(--r); padding: 8px 6px; text-align: center;
+  }
+  .stat-label { font-size: 10px; color: var(--muted); margin-bottom: 3px; }
+  .stat-value { font-size: 14px; font-weight: 700; font-variant-numeric: tabular-nums; }
+  .v-min { color: var(--blue); }
+  .v-max { color: var(--amber); }
+  .v-avg { color: var(--green); }
+  .v-vpp { color: var(--text); }
+
+  /* ── Controls ── */
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--r);
+    padding: 12px;
+  }
+  .card-title {
+    font-size: 10px; font-weight: 700; color: var(--muted);
+    text-transform: uppercase; letter-spacing: .7px; margin-bottom: 10px;
+  }
+
+  /* delay slider + input */
+  .delay-wrap { display: flex; flex-direction: column; gap: 8px; }
+  .delay-top { display: flex; align-items: center; gap: 8px; }
+  .delay-top label { font-size: 12px; color: var(--muted); white-space: nowrap; }
+  input[type=range] { flex: 1; accent-color: var(--green); cursor: pointer; height: 4px; }
+  .delay-input-wrap { display: flex; align-items: center; gap: 6px; }
+  .delay-input-wrap input[type=number] {
+    width: 80px;
     background: var(--surface);
     border: 1px solid var(--border);
     border-radius: 6px;
-    color: var(--muted);
-    font-size: 11px;
-    padding: 4px 10px;
-    cursor: pointer;
-    transition: all .15s;
+    color: var(--text);
+    font-size: 14px;
+    font-weight: 700;
+    padding: 5px 8px;
+    text-align: right;
+    -moz-appearance: textfield;
   }
-  .preset-btn:hover { border-color: var(--green); color: var(--green); }
+  .delay-input-wrap input[type=number]::-webkit-inner-spin-button { display: none; }
+  .delay-input-wrap input[type=number]:focus { outline: none; border-color: var(--green); }
+  .delay-unit { font-size: 12px; color: var(--muted); }
 
-  .action-row { display: flex; gap: 8px; }
+  /* presets */
+  .presets { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 4px; }
+  .preset {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 6px; color: var(--muted); font-size: 11px;
+    padding: 4px 10px; cursor: pointer; transition: all .12s;
+  }
+  .preset:active, .preset.active-p { border-color: var(--green); color: var(--green); background: rgba(63,185,80,.08); }
+
+  /* divider tabs */
+  .div-tabs { display: flex; gap: 5px; margin-bottom: 10px; }
+  .div-tab {
+    flex: 1; padding: 6px 4px; border-radius: 6px; font-size: 11px; font-weight: 600;
+    border: 1px solid var(--border); background: var(--surface); color: var(--muted);
+    cursor: pointer; transition: all .12s;
+  }
+  .div-tab.active { background: rgba(210,153,34,.15); border-color: var(--amber); color: var(--amber); }
+  .div-row { display: flex; align-items: center; gap: 8px; }
+  .div-row label { font-size: 12px; color: var(--muted); flex: 1; }
+  .div-row input[type=number] {
+    width: 90px; background: var(--surface); border: 1px solid var(--border);
+    border-radius: 6px; color: var(--text); font-size: 14px; font-weight: 700;
+    padding: 5px 8px; text-align: right; -moz-appearance: textfield;
+  }
+  .div-row input[type=number]::-webkit-inner-spin-button { display: none; }
+  .div-row input[type=number]:focus { outline: none; border-color: var(--amber); }
+  .div-unit { font-size: 12px; color: var(--muted); white-space: nowrap; }
+  .div-hint { font-size: 11px; color: var(--muted); margin-top: 6px; line-height: 1.5; }
+  .div-result {
+    margin-top: 8px; padding: 6px 10px; border-radius: 6px;
+    background: rgba(210,153,34,.08); border: 1px solid rgba(210,153,34,.25);
+    font-size: 12px; font-weight: 600; color: var(--amber);
+  }
+
+  /* buttons */
+  .action-row { display: flex; gap: 8px; margin-top: 10px; }
   .btn {
-    flex: 1;
-    border-radius: 8px;
-    border: 1px solid var(--border);
-    font-size: 13px;
-    font-weight: 600;
-    padding: 10px;
-    cursor: pointer;
-    transition: all .15s;
+    flex: 1; border-radius: 8px; border: 1px solid var(--border);
+    font-size: 13px; font-weight: 700; padding: 11px 8px;
+    cursor: pointer; transition: all .15s; background: transparent; color: var(--text);
   }
-  .btn-connect {
-    background: var(--green2);
-    border-color: var(--green);
-    color: #fff;
-  }
-  .btn-connect:hover { background: #2ea043; }
-  .btn-connect.active {
-    background: transparent;
-    border-color: var(--red);
-    color: var(--red);
-  }
-  .btn-send {
-    background: transparent;
-    border-color: var(--blue);
-    color: var(--blue);
-  }
-  .btn-send:hover { background: rgba(88,166,255,.1); }
-  .btn-send:disabled { opacity: .35; cursor: not-allowed; }
-  .btn-pause {
-    background: transparent;
-    border-color: var(--amber);
-    color: var(--amber);
-    flex: 0 0 auto;
-    padding: 10px 14px;
-  }
+  .btn-connect { background: var(--green2); border-color: var(--green); color: #fff; }
+  .btn-connect:active { background: #2ea043; }
+  .btn-connect.disc { background: transparent; border-color: var(--red); color: var(--red); }
+  .btn-pause { border-color: var(--amber); color: var(--amber); flex: 0 0 48px; }
+  .btn-pause:active { background: rgba(210,153,34,.1); }
 
+  /* log */
   .log-card {
-    background: var(--card);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    padding: 10px 12px;
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: var(--r); padding: 9px 12px;
     font-family: 'SF Mono', 'Fira Code', monospace;
-    font-size: 11px;
-    color: var(--muted);
-    height: 80px;
-    overflow-y: auto;
-    line-height: 1.6;
+    font-size: 11px; color: var(--muted);
+    height: 76px; overflow-y: auto; line-height: 1.65;
   }
-  .log-card .tx { color: var(--blue); }
-  .log-card .rx { color: var(--green); }
+  .log-card .tx  { color: var(--blue); }
+  .log-card .rx  { color: var(--green); }
   .log-card .err { color: var(--red); }
-
-  .no-serial-notice {
-    background: rgba(248,81,73,.08);
-    border: 1px solid rgba(248,81,73,.3);
-    border-radius: var(--radius);
-    padding: 10px 14px;
-    font-size: 12px;
-    color: var(--red);
-    display: none;
-  }
+  .log-card .inf { color: var(--amber); }
 </style>
 </head>
 <body>
 
 <header>
   <div class="logo">
-    <div class="logo-dot" id="liveDot"></div>
+    <div class="dot" id="dot"></div>
     Осциллограф
   </div>
-  <div class="status-pill" id="statusPill">Не подключено</div>
+  <div class="pill" id="pill">Не подключено</div>
 </header>
 
-<main>
-  <div class="no-serial-notice" id="noSerialNotice">
-    ⚠ WebSerial API не поддерживается. Используйте Chrome или Edge на Android/ПК.
-  </div>
+<!-- Platform notices inserted here by JS -->
+<div id="notices"></div>
 
+<main>
+  <!-- Chart -->
   <div class="chart-card">
     <div class="chart-meta">
       <span id="metaPoints">512 точек</span>
+      <span class="meta-time" id="metaTime">—</span>
       <span id="metaDelay">задержка: 500 мкс</span>
     </div>
     <canvas id="scope"></canvas>
   </div>
 
+  <!-- Stats -->
   <div class="stats-row">
     <div class="stat"><div class="stat-label">Min, В</div><div class="stat-value v-min" id="sMin">—</div></div>
     <div class="stat"><div class="stat-label">Max, В</div><div class="stat-value v-max" id="sMax">—</div></div>
     <div class="stat"><div class="stat-label">Avg, В</div><div class="stat-value v-avg" id="sAvg">—</div></div>
-    <div class="stat"><div class="stat-label">Vpp, В</div><div class="stat-value v-freq" id="sVpp">—</div></div>
+    <div class="stat"><div class="stat-label">Vpp, В</div><div class="stat-value v-vpp" id="sVpp">—</div></div>
   </div>
 
-  <div class="control-card">
-    <div class="control-title">Задержка между сэмплами</div>
+  <!-- Controls -->
+  <div class="card">
+    <div class="card-title">Задержка между сэмплами</div>
 
-    <div class="range-tabs">
-      <button class="range-tab active" data-range="US">мкс</button>
-      <button class="range-tab" data-range="MS">мс</button>
-      <button class="range-tab" data-range="S">сек</button>
+    <div class="delay-wrap">
+      <div class="delay-top">
+        <label for="slider">мкс</label>
+        <input type="range" id="slider" min="1" max="5000" value="500" step="1">
+      </div>
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
+        <div class="delay-input-wrap">
+          <input type="number" id="delayNum" min="1" max="99999" value="500">
+          <span class="delay-unit">мкс</span>
+        </div>
+        <span style="font-size:11px;color:var(--muted)" id="timeHint"></span>
+      </div>
+      <div class="presets" id="presets"></div>
     </div>
 
-    <div class="delay-row">
-      <label>Задержка</label>
-      <input type="range" id="delaySlider" min="1" max="1000" value="500" step="1">
-      <div class="delay-val"><span id="delayNum">500</span> <span id="delayUnit">мкс</span></div>
+    <!-- Voltage divider -->
+    <div style="margin-top:14px;">
+      <div class="card-title">Делитель напряжения</div>
+      <div class="div-tabs" id="divTabs">
+        <button class="div-tab active" data-mode="none">Без делителя</button>
+        <button class="div-tab" data-mode="vmax">Макс. напряжение</button>
+        <button class="div-tab" data-mode="res">Резисторы</button>
+      </div>
+      <div class="div-panel" id="dpNone">
+        <div class="div-hint">Коэффициент = 1 × (сигнал 0–5 В напрямую)</div>
+      </div>
+      <div class="div-panel" id="dpVmax" style="display:none">
+        <div class="div-row">
+          <label>Макс. напряжение сигнала</label>
+          <input type="number" id="vmaxInput" min="1" max="9999" value="12" step="0.1">
+          <span class="div-unit">В</span>
+        </div>
+        <div class="div-hint" id="vmaxHint"></div>
+      </div>
+      <div class="div-panel" id="dpRes" style="display:none">
+        <div class="div-row">
+          <label>R1 (верхний)</label>
+          <input type="number" id="r1Input" min="0" max="9999999" value="10000" step="100">
+          <span class="div-unit">Ом</span>
+        </div>
+        <div class="div-row" style="margin-top:6px">
+          <label>R2 (нижний, к GND)</label>
+          <input type="number" id="r2Input" min="1" max="9999999" value="1000" step="100">
+          <span class="div-unit">Ом</span>
+        </div>
+        <div class="div-hint" id="resHint"></div>
+      </div>
+      <div class="div-result" id="divResult">Коэффициент: 1.00 ×　Макс: 5.0 В</div>
     </div>
-
-    <div class="delay-presets" id="presets"></div>
 
     <div class="action-row">
       <button class="btn btn-connect" id="btnConnect">Подключить USB</button>
-      <button class="btn btn-send" id="btnSend" disabled>Применить</button>
-      <button class="btn btn-pause" id="btnPause" title="Пауза">⏸</button>
+      <button class="btn btn-pause" id="btnPause" title="Пауза/Пуск">⏸</button>
     </div>
   </div>
 
+  <!-- Log -->
   <div class="log-card" id="log"></div>
 </main>
 
 <script>
-// ── Состояние ──────────────────────────────────────────────
-const NUM = 512;
-const VREF = 5.0;  // изменить на 3.3 для Nano 33
+// ════════════════════════════════════════════════════════════
+//  Константы
+// ════════════════════════════════════════════════════════════
+const NUM    = 512;
+const VREF   = 5.0;   // опорное напряжение Arduino (5.0 или 3.3)
+const BAUD   = 115200;
 
+// ════════════════════════════════════════════════════════════
+//  Определение платформы
+// ════════════════════════════════════════════════════════════
+const ua       = navigator.userAgent;
+const isAndroid = /Android/i.test(ua);
+const isIOS     = /iPhone|iPad|iPod/i.test(ua);
+const isMobile  = isAndroid || isIOS;
+const hasSerial = 'serial' in navigator;
+
+function addNotice(msg, cls) {
+  const box = document.getElementById('notices');
+  const d = document.createElement('div');
+  d.className = 'notice ' + cls;
+  d.innerHTML = msg;
+  box.appendChild(d);
+}
+
+if (!hasSerial) {
+  if (isIOS) {
+    addNotice('⚠ iOS не поддерживает WebSerial. Подключитесь с Android-устройства или ПК через Chrome.', 'err');
+  } else if (isMobile) {
+    addNotice('⚠ Включите WebSerial: <b>chrome://flags/#enable-experimental-web-platform-features</b> → Enabled, перезапустите Chrome.', 'warn');
+  } else {
+    addNotice('⚠ WebSerial не поддерживается. Используйте Chrome или Edge.', 'err');
+  }
+} else if (isAndroid) {
+  addNotice('📱 Android: подключите Arduino через кабель OTG (USB-C → USB-A). Нажмите «Подключить USB» — Chrome запросит разрешение.', 'info');
+}
+
+// ════════════════════════════════════════════════════════════
+//  Состояние
+// ════════════════════════════════════════════════════════════
 let port = null, reader = null, writer = null;
 let connected = false, paused = false;
-let currentRange = 'US';
 let currentDelay = 500;
-let frameCount = 0;
+let divider = 1;
+let sendTimer = null;   // debounce отправки команды
 
-// ── Chart.js ───────────────────────────────────────────────
-const ctx = document.getElementById('scope').getContext('2d');
-const chart = new Chart(ctx, {
+// ════════════════════════════════════════════════════════════
+//  Chart.js
+// ════════════════════════════════════════════════════════════
+const scopeCtx = document.getElementById('scope').getContext('2d');
+const chart = new Chart(scopeCtx, {
   type: 'line',
   data: {
     labels: Array.from({length: NUM}, (_, i) => i),
@@ -335,14 +360,11 @@ const chart = new Chart(ctx, {
     maintainAspectRatio: false,
     plugins: { legend: { display: false }, tooltip: { enabled: false } },
     scales: {
-      x: {
-        display: false
-      },
+      x: { display: false },
       y: {
-        min: 0, max: VREF,
+        min: 0,
         ticks: {
-          color: '#7d8590',
-          font: { size: 10 },
+          color: '#7d8590', font: { size: 10 },
           callback: v => v.toFixed(1) + ' В',
           maxTicksLimit: 6
         },
@@ -352,217 +374,346 @@ const chart = new Chart(ctx, {
   }
 });
 
-// ── Логгер ────────────────────────────────────────────────
+function updateChartMax() {
+  chart.options.scales.y.max = VREF * divider;
+  chart.update('none');
+}
+updateChartMax();
+
+// ════════════════════════════════════════════════════════════
+//  Лог
+// ════════════════════════════════════════════════════════════
 const logEl = document.getElementById('log');
-function log(text, cls='') {
-  const line = document.createElement('div');
-  if (cls) line.className = cls;
-  line.textContent = text;
-  logEl.appendChild(line);
-  while (logEl.children.length > 50) logEl.removeChild(logEl.firstChild);
+function log(text, cls = '') {
+  const d = document.createElement('div');
+  if (cls) d.className = cls;
+  d.textContent = text;
+  logEl.appendChild(d);
+  while (logEl.children.length > 60) logEl.removeChild(logEl.firstChild);
   logEl.scrollTop = logEl.scrollHeight;
 }
 
-// ── Статусбар ─────────────────────────────────────────────
-const pill = document.getElementById('statusPill');
-const dot  = document.getElementById('liveDot');
-const btn  = document.getElementById('btnConnect');
+// ════════════════════════════════════════════════════════════
+//  Статус
+// ════════════════════════════════════════════════════════════
+const pillEl = document.getElementById('pill');
+const dotEl  = document.getElementById('dot');
+const btnCon = document.getElementById('btnConnect');
 function setStatus(s) {
-  pill.className = 'status-pill' + (s === 'ok' ? ' connected' : s === 'err' ? ' error' : '');
-  dot.className  = 'logo-dot' + (s === 'ok' ? ' live' : '');
+  pillEl.className = 'pill' + (s === 'ok' ? ' ok' : s === 'err' ? ' err' : '');
+  dotEl.className  = 'dot'  + (s === 'ok' ? ' live' : '');
   if (s === 'ok') {
-    pill.textContent = 'Подключено';
-    btn.textContent  = 'Отключить';
-    btn.classList.add('active');
+    pillEl.textContent = 'Подключено';
+    btnCon.textContent = 'Отключить';
+    btnCon.classList.add('disc');
   } else {
-    pill.textContent = s === 'err' ? 'Ошибка' : 'Не подключено';
-    btn.textContent  = 'Подключить USB';
-    btn.classList.remove('active');
+    pillEl.textContent = s === 'err' ? 'Ошибка' : 'Не подключено';
+    btnCon.textContent = 'Подключить USB';
+    btnCon.classList.remove('disc');
   }
 }
 
-// ── WebSerial check ──────────────────────────────────────
-if (!('serial' in navigator)) {
-  document.getElementById('noSerialNotice').style.display = 'block';
-}
-
-// ── Подключение ──────────────────────────────────────────
-btn.addEventListener('click', async () => {
+// ════════════════════════════════════════════════════════════
+//  Подключение / отключение
+// ════════════════════════════════════════════════════════════
+btnCon.addEventListener('click', async () => {
   if (connected) { await disconnect(); return; }
+  if (!hasSerial) { log('WebSerial не поддерживается', 'err'); return; }
   try {
     port = await navigator.serial.requestPort();
-    await port.open({ baudRate: 115200, bufferSize: 65536 });
+    try { await port.close(); } catch(_) {}
+    await port.open({ baudRate: BAUD, bufferSize: 65536 });
     writer = port.writable.getWriter();
     connected = true;
-    document.getElementById('btnSend').disabled = false;
+    lineBuffer = '';
     setStatus('ok');
-    log('Порт открыт', 'rx');
+    log('Подключено', 'rx');
     readLoop();
+    scheduleSend();
   } catch (e) {
-    log('Ошибка: ' + e.message, 'err');
+    log('Ошибка подключения: ' + e.message, 'err');
     setStatus('err');
   }
 });
 
 async function disconnect() {
   connected = false;
-  try {
-    if (reader) { await reader.cancel(); reader = null; }
-    if (writer) { writer.releaseLock(); writer = null; }
-    if (port)   { await port.close(); port = null; }
-  } catch(e) {}
-  document.getElementById('btnSend').disabled = true;
+  try { if (reader) { await reader.cancel(); } } catch(_) {}
+  try { if (writer) { writer.releaseLock(); } } catch(_) {}
+  try { if (port)   { await port.close(); } } catch(_) {}
+  reader = null; writer = null; port = null;
   setStatus('');
-  log('Порт закрыт');
+  log('Отключено');
 }
 
-// ── Чтение Serial ─────────────────────────────────────────
-// Читаем сырые байты вручную — без pipeTo, чтобы избежать BufferOverrunError.
-// Буфер порта открыт с bufferSize=65536, данные забираем сразу после прихода.
+// ════════════════════════════════════════════════════════════
+//  Чтение Serial
+//  BufferOverrunError — не обрыв, а временное переполнение кольцевого
+//  буфера USB. Перехватываем внутри цикла: сбрасываем незавершённую
+//  строку и продолжаем читать тот же reader — порт не закрываем.
+// ════════════════════════════════════════════════════════════
 let lineBuffer = '';
-const textDecoder = new TextDecoder();
+const dec = new TextDecoder();
 
 async function readLoop() {
-  // Получаем reader напрямую из readable (без pipeTo)
-  reader = port.readable.getReader();
-  try {
-    while (connected) {
-      const { value, done } = await reader.read();
-      if (done) break;
-      // value — Uint8Array, декодируем на лету
-      lineBuffer += textDecoder.decode(value, { stream: true });
-      let nl;
-      while ((nl = lineBuffer.indexOf('\n')) !== -1) {
-        const line = lineBuffer.slice(0, nl).trim();
-        lineBuffer = lineBuffer.slice(nl + 1);
-        if (line.length) handleLine(line);
+  // После BufferOverrunError reader становится непригодным —
+  // нужно releaseLock и взять новый. Делаем это в цикле переподключений.
+  while (connected) {
+    try {
+      reader = port.readable.getReader();
+      while (connected) {
+        const res = await reader.read();
+        if (res.done) break;
+        lineBuffer += dec.decode(res.value, { stream: true });
+        let nl;
+        while ((nl = lineBuffer.indexOf('\n')) !== -1) {
+          const line = lineBuffer.slice(0, nl).trim();
+          lineBuffer = lineBuffer.slice(nl + 1);
+          if (line.length) handleLine(line);
+        }
+        if (lineBuffer.length > 32768) lineBuffer = '';
       }
-      // Защита от бесконечного роста буфера при отсутствии \n
-      if (lineBuffer.length > 32768) lineBuffer = '';
+      break; // вышли нормально — выходим из внешнего цикла
+    } catch(e) {
+      // Освобождаем сломанный reader в любом случае
+      try { reader.releaseLock(); } catch(_) {}
+      reader = null;
+      lineBuffer = '';
+
+      if (e.name === 'BufferOverrunError' || /overrun/i.test(e.message)) {
+        // Временное переполнение — просто берём новый reader и едем дальше
+        log('⚡ overrun — пропуск кадра', 'inf');
+        await new Promise(r => setTimeout(r, 10)); // tiny pause before re-read
+        continue;
+      }
+      // Любая другая ошибка — настоящий обрыв
+      if (connected) {
+        log('Разрыв: ' + e.message, 'err');
+        setStatus('err');
+      }
+      break;
     }
-  } catch(e) {
-    if (connected) { log('Разрыв соединения: ' + e.message, 'err'); setStatus('err'); }
-  } finally {
-    try { reader.releaseLock(); } catch(_) {}
-    reader = null;
   }
+  try { if (reader) reader.releaseLock(); } catch(_) {}
+  reader = null;
 }
 
+
+// ════════════════════════════════════════════════════════════
+//  Обработка входящих строк
+// ════════════════════════════════════════════════════════════
 function handleLine(line) {
   if (line.startsWith('DATA:')) {
     if (paused) return;
-    const vals = line.slice(5).split(',').map(Number);
-    if (vals.length < 10) return;
-    const volts = vals.map(v => (v / 1023) * VREF);
+    const raw = line.slice(5).split(',').map(Number);
+    if (raw.length < 10) return;
+    const volts = raw.map(v => (v / 1023) * VREF * divider);
     chart.data.datasets[0].data = volts;
     chart.update('none');
     updateStats(volts);
-    frameCount++;
-    document.getElementById('metaPoints').textContent = vals.length + ' точек';
+    document.getElementById('metaPoints').textContent = raw.length + ' точек';
   } else if (line.startsWith('OK:')) {
     log('← ' + line, 'rx');
-    const parts = line.slice(3).split(':');
-    if (parts.length >= 2) {
-      currentDelay = parseInt(parts[0]);
-      currentRange = parts[1];
-      updateDelayUI();
-    }
   } else if (line.length) {
     log('← ' + line, 'rx');
   }
 }
 
-// ── Статистика ────────────────────────────────────────────
+// ════════════════════════════════════════════════════════════
+//  Статистика
+// ════════════════════════════════════════════════════════════
 function updateStats(volts) {
   const mn = Math.min(...volts), mx = Math.max(...volts);
-  const avg = volts.reduce((a,b)=>a+b,0) / volts.length;
+  const avg = volts.reduce((a, b) => a + b, 0) / volts.length;
   document.getElementById('sMin').textContent = mn.toFixed(3);
   document.getElementById('sMax').textContent = mx.toFixed(3);
   document.getElementById('sAvg').textContent = avg.toFixed(3);
   document.getElementById('sVpp').textContent = (mx - mn).toFixed(3);
 }
 
-// ── Диапазон ─────────────────────────────────────────────
-const RANGE_CFG = {
-  US: { label: 'мкс', min: 1, max: 16383, def: 500,
-        presets: [1, 10, 50, 100, 500, 1000, 5000] },
-  MS: { label: 'мс',  min: 1, max: 1000,  def: 10,
-        presets: [1, 5, 10, 50, 100, 500, 1000] },
-  S:  { label: 'сек', min: 1, max: 10,    def: 1,
-        presets: [1, 2, 3, 5, 10] }
-};
-
-function updateDelayUI() {
-  const cfg = RANGE_CFG[currentRange];
-  const slider = document.getElementById('delaySlider');
-  slider.min = cfg.min; slider.max = cfg.max;
-  slider.value = Math.min(Math.max(currentDelay, cfg.min), cfg.max);
-  document.getElementById('delayNum').textContent = slider.value;
-  document.getElementById('delayUnit').textContent = cfg.label;
-  document.getElementById('metaDelay').textContent =
-    'задержка: ' + slider.value + ' ' + cfg.label;
-
-  // presets
-  const box = document.getElementById('presets');
-  box.innerHTML = '';
-  cfg.presets.forEach(v => {
-    const b = document.createElement('button');
-    b.className = 'preset-btn';
-    b.textContent = v + ' ' + cfg.label;
-    b.onclick = () => {
-      slider.value = v;
-      document.getElementById('delayNum').textContent = v;
-      document.getElementById('metaDelay').textContent =
-        'задержка: ' + v + ' ' + cfg.label;
-    };
-    box.appendChild(b);
-  });
-
-  // highlight active tab
-  document.querySelectorAll('.range-tab').forEach(t => {
-    t.classList.toggle('active', t.dataset.range === currentRange);
-  });
+// ════════════════════════════════════════════════════════════
+//  Отправка команды (debounce 150 мс)
+// ════════════════════════════════════════════════════════════
+function scheduleSend() {
+  clearTimeout(sendTimer);
+  sendTimer = setTimeout(sendDelay, 150);
 }
 
-document.querySelectorAll('.range-tab').forEach(tab => {
-  tab.addEventListener('click', () => {
-    currentRange = tab.dataset.range;
-    currentDelay = RANGE_CFG[currentRange].def;
-    updateDelayUI();
-  });
-});
-
-document.getElementById('delaySlider').addEventListener('input', e => {
-  document.getElementById('delayNum').textContent = e.target.value;
-  document.getElementById('metaDelay').textContent =
-    'задержка: ' + e.target.value + ' ' + RANGE_CFG[currentRange].label;
-});
-
-// ── Отправить настройки ──────────────────────────────────
-document.getElementById('btnSend').addEventListener('click', async () => {
+async function sendDelay() {
   if (!writer) return;
-  const val = document.getElementById('delaySlider').value;
-  await sendCmd('RANGE:' + currentRange);
-  await new Promise(r => setTimeout(r, 80));
+  const val = currentDelay;
+  await sendCmd('RANGE:US');
+  await new Promise(r => setTimeout(r, 60));
   await sendCmd('DELAY:' + val);
-  currentDelay = parseInt(val);
-});
+}
 
 async function sendCmd(cmd) {
   if (!writer) return;
-  const data = new TextEncoder().encode(cmd + '\n');
-  await writer.write(data);
-  log('→ ' + cmd, 'tx');
+  try {
+    await writer.write(new TextEncoder().encode(cmd + '\n'));
+    log('→ ' + cmd, 'tx');
+  } catch(e) {
+    log('Ошибка отправки: ' + e.message, 'err');
+  }
 }
 
-// ── Пауза ────────────────────────────────────────────────
+// ════════════════════════════════════════════════════════════
+//  UI задержки
+// ════════════════════════════════════════════════════════════
+const PRESETS = [1, 10, 50, 100, 200, 500, 1000, 2000, 5000];
+const slider   = document.getElementById('slider');
+const numInput = document.getElementById('delayNum');
+const timeHint = document.getElementById('timeHint');
+
+function formatTime(us) {
+  const total = us * NUM; // мкс
+  if (total < 1000)      return total.toFixed(0) + ' мкс';
+  if (total < 1000000)   return (total / 1000).toFixed(1) + ' мс';
+  return (total / 1000000).toFixed(2) + ' с';
+}
+
+function applyDelay(val, fromSlider) {
+  val = Math.max(1, Math.min(99999, Math.round(val)));
+  currentDelay = val;
+
+  // синхронизируем ползунок и поле
+  const sliderVal = Math.min(val, 5000);
+  if (!fromSlider) slider.value = sliderVal;
+  numInput.value = val;
+
+  // мета
+  document.getElementById('metaDelay').textContent = 'задержка: ' + val + ' мкс';
+  document.getElementById('metaTime').textContent  = '⏱ ' + formatTime(val);
+  timeHint.textContent = 'Кадр: ' + formatTime(val);
+
+  // подсветка пресетов
+  document.querySelectorAll('.preset').forEach(b => {
+    b.classList.toggle('active-p', parseInt(b.dataset.v) === val);
+  });
+
+  scheduleSend();
+}
+
+// Пресеты
+const presetsEl = document.getElementById('presets');
+PRESETS.forEach(v => {
+  const b = document.createElement('button');
+  b.className = 'preset';
+  b.textContent = v < 1000 ? v + ' мкс' : (v / 1000) + ' мс';
+  b.dataset.v = v;
+  b.onclick = () => applyDelay(v, false);
+  presetsEl.appendChild(b);
+});
+
+// 'input' — обновляем число и подсказку сразу, но НЕ отправляем на Arduino
+slider.addEventListener('input', () => {
+  const v = parseInt(slider.value);
+  numInput.value = v;
+  document.getElementById('metaDelay').textContent = 'задержка: ' + v + ' мкс';
+  document.getElementById('metaTime').textContent  = '⏱ ' + formatTime(v);
+  timeHint.textContent = 'Кадр: ' + formatTime(v);
+  document.querySelectorAll('.preset').forEach(b => {
+    b.classList.toggle('active-p', parseInt(b.dataset.v) === v);
+  });
+});
+// 'change' — отправляем только при отпускании
+slider.addEventListener('change', () => applyDelay(parseInt(slider.value), true));
+numInput.addEventListener('input', () => {
+  const v = parseInt(numInput.value);
+  if (v > 0) applyDelay(v, false);
+});
+numInput.addEventListener('change', () => {
+  const v = parseInt(numInput.value);
+  if (v > 0) applyDelay(v, false);
+});
+
+// ════════════════════════════════════════════════════════════
+//  Делитель напряжения (три режима)
+// ════════════════════════════════════════════════════════════
+let divMode = 'none';   // 'none' | 'vmax' | 'res'
+
+const divResult  = document.getElementById('divResult');
+const dpNone     = document.getElementById('dpNone');
+const dpVmax     = document.getElementById('dpVmax');
+const dpRes      = document.getElementById('dpRes');
+const vmaxInput  = document.getElementById('vmaxInput');
+const vmaxHint   = document.getElementById('vmaxHint');
+const r1Input    = document.getElementById('r1Input');
+const r2Input    = document.getElementById('r2Input');
+const resHint    = document.getElementById('resHint');
+
+function calcDivider() {
+  let k = 1;
+  if (divMode === 'vmax') {
+    const vmax = parseFloat(vmaxInput.value) || VREF;
+    k = vmax / VREF;
+    vmaxHint.textContent =
+      `Делитель: (R1+R2)/R2 = ${k.toFixed(3)} × Диапазон: 0 – ${vmax.toFixed(1)} В`;
+  } else if (divMode === 'res') {
+    const r1 = parseFloat(r1Input.value) || 0;
+    const r2 = parseFloat(r2Input.value) || 1;
+    k = (r1 + r2) / r2;
+    const vmax = (VREF * k).toFixed(2);
+    resHint.textContent =
+      `Коэффициент: (${r1}+${r2})/${r2} = ${k.toFixed(3)} × Макс: ${vmax} В`;
+  }
+  divider = Math.max(1, k);
+  divResult.textContent =
+    `Коэффициент: ${divider.toFixed(3)} × Макс: ${(VREF * divider).toFixed(2)} В`;
+  updateChartMax();
+}
+
+// Переключение режимов
+document.querySelectorAll('.div-tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    divMode = tab.dataset.mode;
+    document.querySelectorAll('.div-tab').forEach(t => t.classList.remove('active'));
+    tab.classList.add('active');
+    dpNone.style.display = divMode === 'none' ? '' : 'none';
+    dpVmax.style.display = divMode === 'vmax' ? '' : 'none';
+    dpRes.style.display  = divMode === 'res'  ? '' : 'none';
+    calcDivider();
+  });
+});
+
+vmaxInput.addEventListener('input',  calcDivider);
+vmaxInput.addEventListener('change', calcDivider);
+r1Input.addEventListener('input',    calcDivider);
+r1Input.addEventListener('change',   calcDivider);
+r2Input.addEventListener('input',    calcDivider);
+r2Input.addEventListener('change',   calcDivider);
+
+// ════════════════════════════════════════════════════════════
+//  Пауза
+// ════════════════════════════════════════════════════════════
 document.getElementById('btnPause').addEventListener('click', () => {
   paused = !paused;
   document.getElementById('btnPause').textContent = paused ? '▶' : '⏸';
 });
 
-// ── Init ─────────────────────────────────────────────────
-updateDelayUI();
+// ════════════════════════════════════════════════════════════
+//  Закрытие порта при уходе со страницы
+//  (beforeunload не всегда срабатывает на мобиле, но помогает на ПК)
+// ════════════════════════════════════════════════════════════
+window.addEventListener('beforeunload', () => {
+  if (port && connected) {
+    connected = false;
+    try { port.close(); } catch(_) {}
+  }
+});
+
+// Если страница уходит в фон на Android — пробуем освободить порт
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden && port && connected) {
+    // не отключаем полностью — только помечаем; при возврате порт обычно жив
+  }
+});
+
+// ════════════════════════════════════════════════════════════
+//  Инициализация
+// ════════════════════════════════════════════════════════════
+applyDelay(500, false);
+calcDivider();
 </script>
 </body>
 </html>
