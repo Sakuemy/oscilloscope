@@ -25,7 +25,7 @@
     background: var(--bg);
     color: var(--text);
     font-family: -apple-system, 'Segoe UI', sans-serif;
-    font-size: 14px;
+    font-size: 19.6px; /* 14px × 1.4 */
     min-height: 100dvh;
     display: flex;
     flex-direction: column;
@@ -43,11 +43,11 @@
     gap: 8px;
     position: sticky; top: 0; z-index: 10;
   }
-  .logo { font-size: 15px; font-weight: 700; display: flex; align-items: center; gap: 8px; }
-  .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--muted); transition: background .3s, box-shadow .3s; }
+  .logo { font-size: 21px; font-weight: 700; display: flex; align-items: center; gap: 8px; }
+  .dot { width: 11px; height: 11px; border-radius: 50%; background: var(--muted); transition: background .3s, box-shadow .3s; }
   .dot.live { background: var(--green); box-shadow: 0 0 7px var(--green); }
   .pill {
-    font-size: 11px; padding: 4px 10px; border-radius: 20px;
+    font-size: 15.4px; padding: 4px 10px; border-radius: 20px;
     border: 1px solid var(--border); background: var(--card); color: var(--muted);
     transition: all .2s;
   }
@@ -59,7 +59,7 @@
     margin: 10px 12px 0;
     padding: 9px 13px;
     border-radius: var(--r);
-    font-size: 12px;
+    font-size: 16.8px;
     line-height: 1.5;
   }
   .notice.warn { background: rgba(210,153,34,.1); border: 1px solid rgba(210,153,34,.35); color: var(--amber); }
@@ -78,14 +78,15 @@
   .chart-meta {
     display: flex;
     justify-content: space-between;
-    font-size: 11px;
+    font-size: 15.4px;
     color: var(--muted);
     margin-bottom: 8px;
     gap: 6px;
     flex-wrap: wrap;
   }
   .chart-meta .meta-time { color: var(--blue); font-weight: 600; }
-  canvas#scope { width: 100% !important; height: 200px !important; display: block; }
+  .chart-wrap { width: 100%; height: 200px; position: relative; }
+  canvas#scope { width: 100% !important; height: 100% !important; display: block; }
 
   /* ── Stats ── */
   .stats-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 7px; }
@@ -93,8 +94,8 @@
     background: var(--card); border: 1px solid var(--border);
     border-radius: var(--r); padding: 8px 6px; text-align: center;
   }
-  .stat-label { font-size: 10px; color: var(--muted); margin-bottom: 3px; }
-  .stat-value { font-size: 14px; font-weight: 700; font-variant-numeric: tabular-nums; }
+  .stat-label { font-size: 14px; color: var(--muted); margin-bottom: 3px; }
+  .stat-value { font-size: 19.6px; font-weight: 700; font-variant-numeric: tabular-nums; }
   .v-min { color: var(--blue); }
   .v-max { color: var(--amber); }
   .v-avg { color: var(--green); }
@@ -108,14 +109,14 @@
     padding: 12px;
   }
   .card-title {
-    font-size: 10px; font-weight: 700; color: var(--muted);
+    font-size: 14px; font-weight: 700; color: var(--muted);
     text-transform: uppercase; letter-spacing: .7px; margin-bottom: 10px;
   }
 
   /* delay slider + input */
   .delay-wrap { display: flex; flex-direction: column; gap: 8px; }
   .delay-top { display: flex; align-items: center; gap: 8px; }
-  .delay-top label { font-size: 12px; color: var(--muted); white-space: nowrap; }
+  .delay-top label { font-size: 16.8px; color: var(--muted); white-space: nowrap; }
   input[type=range] { flex: 1; accent-color: var(--green); cursor: pointer; height: 4px; }
   .delay-input-wrap { display: flex; align-items: center; gap: 6px; }
   .delay-input-wrap input[type=number] {
@@ -124,7 +125,7 @@
     border: 1px solid var(--border);
     border-radius: 6px;
     color: var(--text);
-    font-size: 14px;
+    font-size: 19.6px;
     font-weight: 700;
     padding: 5px 8px;
     text-align: right;
@@ -132,13 +133,13 @@
   }
   .delay-input-wrap input[type=number]::-webkit-inner-spin-button { display: none; }
   .delay-input-wrap input[type=number]:focus { outline: none; border-color: var(--green); }
-  .delay-unit { font-size: 12px; color: var(--muted); }
+  .delay-unit { font-size: 16.8px; color: var(--muted); }
 
   /* presets */
   .presets { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 4px; }
   .preset {
     background: var(--surface); border: 1px solid var(--border);
-    border-radius: 6px; color: var(--muted); font-size: 11px;
+    border-radius: 6px; color: var(--muted); font-size: 15.4px;
     padding: 4px 10px; cursor: pointer; transition: all .12s;
   }
   .preset:active, .preset.active-p { border-color: var(--green); color: var(--green); background: rgba(63,185,80,.08); }
@@ -146,39 +147,39 @@
   /* divider tabs */
   .div-tabs { display: flex; gap: 5px; margin-bottom: 10px; }
   .div-tab {
-    flex: 1; padding: 6px 4px; border-radius: 6px; font-size: 11px; font-weight: 600;
+    flex: 1; padding: 6px 4px; border-radius: 6px; font-size: 15.4px; font-weight: 600;
     border: 1px solid var(--border); background: var(--surface); color: var(--muted);
     cursor: pointer; transition: all .12s;
   }
   .div-tab.active { background: rgba(210,153,34,.15); border-color: var(--amber); color: var(--amber); }
   .div-row { display: flex; align-items: center; gap: 8px; }
-  .div-row label { font-size: 12px; color: var(--muted); flex: 1; }
+  .div-row label { font-size: 16.8px; color: var(--muted); flex: 1; }
   .div-row input[type=number] {
     width: 90px; background: var(--surface); border: 1px solid var(--border);
-    border-radius: 6px; color: var(--text); font-size: 14px; font-weight: 700;
+    border-radius: 6px; color: var(--text); font-size: 19.6px; font-weight: 700;
     padding: 5px 8px; text-align: right; -moz-appearance: textfield;
   }
   .div-row input[type=number]::-webkit-inner-spin-button { display: none; }
   .div-row input[type=number]:focus { outline: none; border-color: var(--amber); }
-  .div-unit { font-size: 12px; color: var(--muted); white-space: nowrap; }
-  .div-hint { font-size: 11px; color: var(--muted); margin-top: 6px; line-height: 1.5; }
+  .div-unit { font-size: 16.8px; color: var(--muted); white-space: nowrap; }
+  .div-hint { font-size: 15.4px; color: var(--muted); margin-top: 6px; line-height: 1.5; }
   .div-result {
     margin-top: 8px; padding: 6px 10px; border-radius: 6px;
     background: rgba(210,153,34,.08); border: 1px solid rgba(210,153,34,.25);
-    font-size: 12px; font-weight: 600; color: var(--amber);
+    font-size: 16.8px; font-weight: 600; color: var(--amber);
   }
 
   /* buttons */
   .action-row { display: flex; gap: 8px; margin-top: 10px; }
   .btn {
     flex: 1; border-radius: 8px; border: 1px solid var(--border);
-    font-size: 13px; font-weight: 700; padding: 11px 8px;
+    font-size: 18.2px; font-weight: 700; padding: 11px 8px;
     cursor: pointer; transition: all .15s; background: transparent; color: var(--text);
   }
   .btn-connect { background: var(--green2); border-color: var(--green); color: #fff; }
   .btn-connect:active { background: #2ea043; }
   .btn-connect.disc { background: transparent; border-color: var(--red); color: var(--red); }
-  .btn-pause { border-color: var(--amber); color: var(--amber); flex: 0 0 48px; }
+  .btn-pause { border-color: var(--amber); color: var(--amber); flex: 0 0 56px; }
   .btn-pause:active { background: rgba(210,153,34,.1); }
 
   /* log */
@@ -186,13 +187,55 @@
     background: var(--card); border: 1px solid var(--border);
     border-radius: var(--r); padding: 9px 12px;
     font-family: 'SF Mono', 'Fira Code', monospace;
-    font-size: 11px; color: var(--muted);
-    height: 76px; overflow-y: auto; line-height: 1.65;
+    font-size: 15.4px; color: var(--muted);
+    height: 90px; overflow-y: auto; line-height: 1.65;
   }
   .log-card .tx  { color: var(--blue); }
   .log-card .rx  { color: var(--green); }
   .log-card .err { color: var(--red); }
   .log-card .inf { color: var(--amber); }
+
+  /* chart resize handle */
+  .chart-resize-handle {
+    width: 100%; height: 14px; cursor: ns-resize;
+    display: flex; align-items: center; justify-content: center;
+    color: var(--border); user-select: none; margin-top: 2px;
+    touch-action: none;
+  }
+  .chart-resize-handle:hover { color: var(--muted); }
+
+  /* voltage range card */
+  .vrange-card {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: var(--r); padding: 12px;
+  }
+  .vrange-row { display: flex; align-items: center; gap: 8px; margin-top: 6px; }
+  .vrange-row label { font-size: 16.8px; color: var(--muted); flex: 1; }
+  .vrange-row input[type=number] {
+    width: 80px; background: var(--surface); border: 1px solid var(--border);
+    border-radius: 6px; color: var(--text); font-size: 19.6px; font-weight: 700;
+    padding: 5px 8px; text-align: right; -moz-appearance: textfield;
+  }
+  .vrange-row input[type=number]::-webkit-inner-spin-button { display: none; }
+  .vrange-row input[type=number]:focus { outline: none; border-color: var(--blue); }
+  .vrange-row input[type=number]:disabled { opacity: 0.35; cursor: not-allowed; }
+  .vrange-unit { font-size: 16.8px; color: var(--muted); white-space: nowrap; }
+  .vrange-auto-btn {
+    padding: 4px 10px; border-radius: 6px; font-size: 15.4px; font-weight: 600;
+    border: 1px solid var(--border); background: var(--surface); color: var(--muted);
+    cursor: pointer; transition: all .12s; white-space: nowrap;
+  }
+  .vrange-auto-btn.active { border-color: var(--blue); color: var(--blue); background: rgba(88,166,255,.1); }
+
+  /* burst frequency display */
+  .burst-card {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: var(--r); padding: 10px 14px;
+    display: flex; align-items: center; gap: 12px;
+  }
+  .burst-label { font-size: 16.8px; color: var(--muted); white-space: nowrap; }
+  .burst-value { font-size: 26px; font-weight: 700; font-variant-numeric: tabular-nums; color: var(--blue); flex: 1; }
+  .burst-unit  { font-size: 16.8px; color: var(--muted); }
 </style>
 </head>
 <body>
@@ -216,7 +259,36 @@
       <span class="meta-time" id="metaTime">—</span>
       <span id="metaDelay">задержка: 500 мкс</span>
     </div>
-    <canvas id="scope"></canvas>
+    <div class="chart-wrap" id="chartWrap">
+      <canvas id="scope"></canvas>
+    </div>
+    <div class="chart-resize-handle" id="chartResizeHandle" title="Потянуть для изменения высоты">⋯</div>
+  </div>
+
+  <!-- Burst Frequency -->
+  <div class="burst-card">
+    <span class="burst-label">Частота всплесков:</span>
+    <span class="burst-value" id="burstFreq">—</span>
+    <span class="burst-unit" id="burstUnit">Гц</span>
+  </div>
+
+  <!-- Voltage Range -->
+  <div class="vrange-card">
+    <div class="card-title">Диапазон графика (ось Y)</div>
+    <div class="vrange-row">
+      <label>Мин. напряжение</label>
+      <input type="number" id="vrangeMin" value="0" step="0.1">
+      <span class="vrange-unit">В</span>
+    </div>
+    <div class="vrange-row">
+      <label>Макс. напряжение</label>
+      <input type="number" id="vrangeMax" value="5" step="0.1">
+      <span class="vrange-unit">В</span>
+    </div>
+    <div style="margin-top:8px; display:flex; gap:8px; align-items:center;">
+      <button class="vrange-auto-btn active" id="vrangeAutoBtn">⟳ Авто</button>
+      <span style="font-size:15.4px; color:var(--muted);" id="vrangeStatus">Автоподстройка включена</span>
+    </div>
   </div>
 
   <!-- Stats -->
@@ -241,7 +313,7 @@
           <input type="number" id="delayNum" min="1" max="99999" value="500">
           <span class="delay-unit">мкс</span>
         </div>
-        <span style="font-size:11px;color:var(--muted)" id="timeHint"></span>
+        <span style="font-size:15.4px;color:var(--muted)" id="timeHint"></span>
       </div>
       <div class="presets" id="presets"></div>
     </div>
@@ -325,7 +397,7 @@ if (!hasSerial) {
     addNotice('⚠ WebSerial не поддерживается. Используйте Chrome или Edge.', 'err');
   }
 } else if (isAndroid) {
-  addNotice('📱 Android: подключите Arduino через кабель OTG (USB-C → USB-A). Нажмите «Подключить USB» — Chrome запросит разрешение.', 'info');
+  addNotice('📱 Android: подключите Arduino через кабель OTG (USB-C → USB-A или USB-A → micro-USB). Если появляется сообщение «Нет устройств» — убедитесь, что кабель OTG подключён и Arduino включён, затем нажмите «Подключить USB». Chrome запросит разрешение.', 'info');
 }
 
 // ════════════════════════════════════════════════════════════
@@ -362,9 +434,8 @@ const chart = new Chart(scopeCtx, {
     scales: {
       x: { display: false },
       y: {
-        min: 0,
         ticks: {
-          color: '#7d8590', font: { size: 10 },
+          color: '#7d8590', font: { size: 14 },
           callback: v => v.toFixed(1) + ' В',
           maxTicksLimit: 6
         },
@@ -375,10 +446,46 @@ const chart = new Chart(scopeCtx, {
 });
 
 function updateChartMax() {
-  chart.options.scales.y.max = VREF * divider;
-  chart.update('none');
+  // вызывается из calcDivider; applyVRange доступна после инициализации
+  if (typeof applyVRange === 'function') applyVRange();
 }
-updateChartMax();
+// updateChartMax() будет вызван позже из calcDivider после инициализации
+
+// ════════════════════════════════════════════════════════════
+//  Изменение высоты графика (перетаскивание вниз)
+// ════════════════════════════════════════════════════════════
+const scopeCanvas = document.getElementById('scope');
+const chartWrap   = document.getElementById('chartWrap');
+const resizeHandle = document.getElementById('chartResizeHandle');
+let chartDragActive = false;
+let chartDragStartY = 0;
+let chartDragStartH = 200;
+
+function onDragStart(e) {
+  chartDragActive = true;
+  chartDragStartY = e.touches ? e.touches[0].clientY : e.clientY;
+  chartDragStartH = chartWrap.getBoundingClientRect().height;
+  document.body.style.userSelect = 'none';
+  e.preventDefault();
+}
+function onDragMove(e) {
+  if (!chartDragActive) return;
+  const y = e.touches ? e.touches[0].clientY : e.clientY;
+  const newH = Math.max(80, Math.min(600, chartDragStartH + (y - chartDragStartY)));
+  chartWrap.style.height = newH + 'px';
+  chart.resize();
+  e.preventDefault();
+}
+function onDragEnd() {
+  chartDragActive = false;
+  document.body.style.userSelect = '';
+}
+resizeHandle.addEventListener('mousedown',  onDragStart, { passive: false });
+resizeHandle.addEventListener('touchstart', onDragStart, { passive: false });
+document.addEventListener('mousemove',  onDragMove, { passive: false });
+document.addEventListener('touchmove',  onDragMove, { passive: false });
+document.addEventListener('mouseup',   onDragEnd);
+document.addEventListener('touchend',  onDragEnd);
 
 // ════════════════════════════════════════════════════════════
 //  Лог
@@ -420,7 +527,8 @@ btnCon.addEventListener('click', async () => {
   if (connected) { await disconnect(); return; }
   if (!hasSerial) { log('WebSerial не поддерживается', 'err'); return; }
   try {
-    port = await navigator.serial.requestPort();
+    // Пустой массив filters — показываем ВСЕ USB-устройства (нужно для Android OTG)
+    port = await navigator.serial.requestPort({ filters: [] });
     try { await port.close(); } catch(_) {}
     await port.open({ baudRate: BAUD, bufferSize: 65536 });
     writer = port.writable.getWriter();
@@ -431,7 +539,14 @@ btnCon.addEventListener('click', async () => {
     readLoop();
     scheduleSend();
   } catch (e) {
-    log('Ошибка подключения: ' + e.message, 'err');
+    if (e.name === 'NotFoundError' || /no.*port|не найден|устройств/i.test(e.message)) {
+      log('Устройство не выбрано. На Android: проверьте OTG-кабель и разрешения USB.', 'err');
+      if (isAndroid) {
+        addNotice('💡 Android: если список устройств пуст — проверьте OTG-кабель (USB-C→USB-A или переходник). Некоторые телефоны требуют включить «USB OTG» в настройках. Убедитесь, что Arduino подключён и горит индикатор питания.', 'warn');
+      }
+    } else {
+      log('Ошибка подключения: ' + e.message, 'err');
+    }
     setStatus('err');
   }
 });
@@ -520,6 +635,85 @@ function handleLine(line) {
 }
 
 // ════════════════════════════════════════════════════════════
+//  Диапазон оси Y (ручной / авто)
+// ════════════════════════════════════════════════════════════
+let vrangeAuto = true;
+const vrangeMinEl  = document.getElementById('vrangeMin');
+const vrangeMaxEl  = document.getElementById('vrangeMax');
+const vrangeAutoBtn = document.getElementById('vrangeAutoBtn');
+const vrangeStatus = document.getElementById('vrangeStatus');
+
+function applyVRange() {
+  if (vrangeAuto) {
+    chart.options.scales.y.min = undefined;
+    chart.options.scales.y.max = undefined;
+  } else {
+    const mn = parseFloat(vrangeMinEl.value);
+    const mx = parseFloat(vrangeMaxEl.value);
+    if (!isNaN(mn) && !isNaN(mx) && mx > mn) {
+      chart.options.scales.y.min = mn;
+      chart.options.scales.y.max = mx;
+    }
+  }
+  chart.update('none');
+}
+
+vrangeAutoBtn.addEventListener('click', () => {
+  vrangeAuto = !vrangeAuto;
+  vrangeAutoBtn.classList.toggle('active', vrangeAuto);
+  vrangeStatus.textContent = vrangeAuto ? 'Автоподстройка включена' : 'Ручной диапазон';
+  vrangeMinEl.disabled = vrangeAuto;
+  vrangeMaxEl.disabled = vrangeAuto;
+  applyVRange();
+});
+vrangeMinEl.addEventListener('input', applyVRange);
+vrangeMaxEl.addEventListener('input', applyVRange);
+vrangeMinEl.disabled = true;
+vrangeMaxEl.disabled = true;
+
+// ════════════════════════════════════════════════════════════
+//  Определение частоты всплесков
+// ════════════════════════════════════════════════════════════
+let burstHistory = [];   // timestamps последних всплесков
+
+function detectBurstFreq(volts) {
+  const mn = Math.min(...volts);
+  const mx = Math.max(...volts);
+  const vpp = mx - mn;
+  if (vpp < 0.05) {
+    document.getElementById('burstFreq').textContent = '—';
+    document.getElementById('burstUnit').textContent = '';
+    return;
+  }
+  // Порог — 50% размаха выше минимума
+  const thresh = mn + vpp * 0.5;
+  let crossings = 0;
+  for (let i = 1; i < volts.length; i++) {
+    if (volts[i - 1] < thresh && volts[i] >= thresh) crossings++;
+  }
+  if (crossings < 1) {
+    document.getElementById('burstFreq').textContent = '0';
+    document.getElementById('burstUnit').textContent = 'всплесков/кадр';
+    return;
+  }
+  // Частота всплесков в кадре (сэмплов на кадр * мкс/сэмпл = мкс на кадр)
+  const frameDurUs = volts.length * currentDelay;
+  const freqHz = (crossings / frameDurUs) * 1e6;
+  const freqEl = document.getElementById('burstFreq');
+  const unitEl = document.getElementById('burstUnit');
+  if (freqHz >= 1000) {
+    freqEl.textContent = (freqHz / 1000).toFixed(2);
+    unitEl.textContent = 'кГц';
+  } else if (freqHz >= 1) {
+    freqEl.textContent = freqHz.toFixed(2);
+    unitEl.textContent = 'Гц';
+  } else {
+    freqEl.textContent = (freqHz * 1000).toFixed(2);
+    unitEl.textContent = 'мГц';
+  }
+}
+
+// ════════════════════════════════════════════════════════════
 //  Статистика
 // ════════════════════════════════════════════════════════════
 function updateStats(volts) {
@@ -529,6 +723,8 @@ function updateStats(volts) {
   document.getElementById('sMax').textContent = mx.toFixed(3);
   document.getElementById('sAvg').textContent = avg.toFixed(3);
   document.getElementById('sVpp').textContent = (mx - mn).toFixed(3);
+  detectBurstFreq(volts);
+  if (vrangeAuto) applyVRange();
 }
 
 // ════════════════════════════════════════════════════════════
@@ -714,6 +910,7 @@ document.addEventListener('visibilitychange', () => {
 // ════════════════════════════════════════════════════════════
 applyDelay(500, false);
 calcDivider();
+applyVRange(); // применяем начальный авто-режим оси Y
 </script>
 </body>
 </html>
