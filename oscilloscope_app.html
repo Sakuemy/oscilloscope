@@ -227,6 +227,34 @@
   }
   .vrange-auto-btn.active { border-color: var(--blue); color: var(--blue); background: rgba(88,166,255,.1); }
 
+  /* recording card */
+  .rec-status-row { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+  .rec-dot { width: 11px; height: 11px; border-radius: 50%; background: var(--muted); flex-shrink: 0; }
+  .rec-dot.on { background: var(--red); box-shadow: 0 0 7px var(--red); animation: recBlink 1s infinite; }
+  @keyframes recBlink { 50% { opacity: .35; } }
+  .rec-info { font-size: 15.4px; color: var(--muted); flex: 1; }
+  .rec-info b { color: var(--text); font-variant-numeric: tabular-nums; }
+  .rec-warn {
+    margin-top: 8px; padding: 6px 10px; border-radius: 6px;
+    background: rgba(248,81,73,.08); border: 1px solid rgba(248,81,73,.3);
+    font-size: 15.4px; color: var(--red); display: none;
+  }
+  .rec-row { display: flex; align-items: center; gap: 8px; margin-top: 10px; }
+  .rec-row label { font-size: 16.8px; color: var(--muted); flex: 1; }
+  .rec-row input[type=number] {
+    width: 90px; background: var(--surface); border: 1px solid var(--border);
+    border-radius: 6px; color: var(--text); font-size: 19.6px; font-weight: 700;
+    padding: 5px 8px; text-align: right; -moz-appearance: textfield;
+  }
+  .rec-row input[type=number]::-webkit-inner-spin-button { display: none; }
+  .rec-row input[type=number]:focus { outline: none; border-color: var(--red); }
+  .btn-rec { background: transparent; border-color: var(--red); color: var(--red); }
+  .btn-rec:active { background: rgba(248,81,73,.1); }
+  .btn-rec.active { background: var(--red); color: #fff; }
+  .btn-dl { border-color: var(--blue); color: var(--blue); }
+  .btn-dl:active { background: rgba(88,166,255,.1); }
+  .btn-dl:disabled { opacity: .35; cursor: not-allowed; }
+
   /* burst frequency display */
   .burst-card {
     background: var(--card); border: 1px solid var(--border);
@@ -359,6 +387,26 @@
     </div>
   </div>
 
+  <!-- Recording -->
+  <div class="card">
+    <div class="card-title">Запись данных</div>
+    <div class="rec-status-row">
+      <div class="rec-dot" id="recDot"></div>
+      <div class="rec-info" id="recInfo">Не записывается</div>
+    </div>
+    <div class="rec-row">
+      <label>Лимит кадров</label>
+      <input type="number" id="recMaxFrames" min="10" max="200000" value="5000" step="100">
+    </div>
+    <div class="rec-warn" id="recWarn">Достигнут лимит кадров — запись остановлена автоматически.</div>
+    <div class="action-row">
+      <button class="btn btn-rec" id="btnRec">⏺ Начать запись</button>
+      <button class="btn btn-dl" id="btnDlSession" disabled>⬇ CSV (сессия)</button>
+      <button class="btn btn-dl" id="btnDlFrame">⬇ CSV (текущий кадр)</button>
+      <button class="btn" id="btnRecClear" disabled>🗑 Очистить</button>
+    </div>
+  </div>
+
   <!-- Log -->
   <div class="log-card" id="log"></div>
 </main>
@@ -408,6 +456,9 @@ let connected = false, paused = false;
 let currentDelay = 500;
 let divider = 1;
 let sendTimer = null;   // debounce отправки команды
+
+// последний полученный кадр (для быстрого экспорта "текущий кадр")
+let lastFrame = null; // { volts, delay, t: Date }
 
 // ════════════════════════════════════════════════════════════
 //  Chart.js
@@ -627,6 +678,8 @@ function handleLine(line) {
     chart.update('none');
     updateStats(volts);
     document.getElementById('metaPoints').textContent = raw.length + ' точек';
+    lastFrame = { volts, delay: currentDelay, t: new Date() };
+    if (recording) recordFrame(volts, currentDelay);
   } else if (line.startsWith('OK:')) {
     log('← ' + line, 'rx');
   } else if (line.length) {
@@ -904,6 +957,136 @@ document.addEventListener('visibilitychange', () => {
     // не отключаем полностью — только помечаем; при возврате порт обычно жив
   }
 });
+
+// ════════════════════════════════════════════════════════════
+//  Запись данных и экспорт в CSV
+//  CSV выбран вместо .xlsx/.ods: не требует сторонних библиотек,
+//  открывается в Excel/LibreOffice/Google Таблицах напрямую,
+//  и график там строится штатным «Вставка → Диаграмма» за пару кликов.
+// ════════════════════════════════════════════════════════════
+let recording = false;
+let recordedFrames = [];      // [{ tRelSec, delay, volts }]
+let recordStartTime = null;   // performance.now() в момент старта записи
+
+const recDot          = document.getElementById('recDot');
+const recInfo         = document.getElementById('recInfo');
+const recWarn         = document.getElementById('recWarn');
+const recMaxFramesEl  = document.getElementById('recMaxFrames');
+const btnRec          = document.getElementById('btnRec');
+const btnDlSession    = document.getElementById('btnDlSession');
+const btnDlFrame      = document.getElementById('btnDlFrame');
+const btnRecClear     = document.getElementById('btnRecClear');
+
+function updateRecInfo() {
+  const nFrames = recordedFrames.length;
+  const nPoints = nFrames * NUM;
+  const approxKB = Math.round((nPoints * 14) / 1024); // грубая оценка размера CSV
+  if (recording) {
+    recInfo.innerHTML = `Идёт запись — <b>${nFrames}</b> кадров, <b>${nPoints}</b> точек (~${approxKB} КБ)`;
+  } else if (nFrames > 0) {
+    recInfo.innerHTML = `Остановлено — <b>${nFrames}</b> кадров, <b>${nPoints}</b> точек (~${approxKB} КБ)`;
+  } else {
+    recInfo.textContent = 'Не записывается';
+  }
+  btnDlSession.disabled = nFrames === 0;
+  btnRecClear.disabled = nFrames === 0;
+}
+
+function recordFrame(volts, delay) {
+  const maxFrames = Math.max(10, parseInt(recMaxFramesEl.value) || 5000);
+  const tRelSec = (performance.now() - recordStartTime) / 1000;
+  recordedFrames.push({ tRelSec, delay, volts: volts.slice() });
+  if (recordedFrames.length >= maxFrames) {
+    recording = false;
+    setRecUI();
+    recWarn.style.display = 'block';
+    log('Запись остановлена: достигнут лимит кадров (' + maxFrames + ')', 'inf');
+  }
+  updateRecInfo();
+}
+
+function setRecUI() {
+  recDot.classList.toggle('on', recording);
+  btnRec.textContent = recording ? '⏹ Остановить запись' : '⏺ Начать запись';
+  btnRec.classList.toggle('active', recording);
+  updateRecInfo();
+}
+
+btnRec.addEventListener('click', () => {
+  recording = !recording;
+  if (recording) {
+    recWarn.style.display = 'none';
+    recordStartTime = performance.now();
+    log('Запись начата', 'inf');
+  } else {
+    log('Запись остановлена', 'inf');
+  }
+  setRecUI();
+});
+
+btnRecClear.addEventListener('click', () => {
+  if (recording) return;
+  recordedFrames = [];
+  recWarn.style.display = 'none';
+  updateRecInfo();
+  log('Записанные данные очищены', 'inf');
+});
+
+// Строит CSV-текст из массива кадров.
+// Столбцы: frame, sample, t_s, voltage_v — этого достаточно,
+// чтобы в Excel/LibreOffice выделить t_s и voltage_v и построить график.
+function buildCSV(frames) {
+  const lines = [];
+  lines.push('sep=,');
+  lines.push('# Осциллограф — экспорт данных');
+  lines.push('# Дата экспорта: ' + new Date().toLocaleString('ru-RU'));
+  lines.push('# VREF=' + VREF + ' В, делитель=' + divider.toFixed(4) + ', точек в кадре=' + NUM);
+  lines.push('frame,sample,t_s,voltage_v');
+  frames.forEach((fr, fi) => {
+    const dtSec = fr.delay / 1e6; // задержка между сэмплами в секундах
+    for (let i = 0; i < fr.volts.length; i++) {
+      const t = fr.tRelSec + i * dtSec;
+      lines.push(fi + ',' + i + ',' + t.toFixed(6) + ',' + fr.volts[i].toFixed(4));
+    }
+  });
+  return lines.join('\r\n');
+}
+
+function downloadCSV(text, filename) {
+  const blob = new Blob(['\uFEFF' + text], { type: 'text/csv;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(() => URL.revokeObjectURL(url), 5000);
+}
+
+function timestampForFilename() {
+  const d = new Date();
+  const p = n => String(n).padStart(2, '0');
+  return d.getFullYear() + p(d.getMonth() + 1) + p(d.getDate()) + '_' +
+         p(d.getHours()) + p(d.getMinutes()) + p(d.getSeconds());
+}
+
+btnDlSession.addEventListener('click', () => {
+  if (recordedFrames.length === 0) return;
+  const csv = buildCSV(recordedFrames);
+  downloadCSV(csv, 'osc_session_' + timestampForFilename() + '.csv');
+  log('Экспортирована сессия: ' + recordedFrames.length + ' кадров', 'inf');
+});
+
+btnDlFrame.addEventListener('click', () => {
+  if (!lastFrame) { log('Нет данных для экспорта — дождитесь первого кадра', 'err'); return; }
+  const frameForExport = { tRelSec: 0, delay: lastFrame.delay, volts: lastFrame.volts };
+  const csv = buildCSV([frameForExport]);
+  downloadCSV(csv, 'osc_frame_' + timestampForFilename() + '.csv');
+  log('Экспортирован текущий кадр', 'inf');
+});
+
+setRecUI();
 
 // ════════════════════════════════════════════════════════════
 //  Инициализация
