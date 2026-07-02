@@ -89,7 +89,7 @@
   canvas#scope { width: 100% !important; height: 100% !important; display: block; }
 
   /* ── Stats ── */
-  .stats-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 7px; }
+  .stats-row { display: grid; grid-template-columns: repeat(5, 1fr); gap: 7px; }
   .stat {
     background: var(--card); border: 1px solid var(--border);
     border-radius: var(--r); padding: 8px 6px; text-align: center;
@@ -100,6 +100,7 @@
   .v-max { color: var(--amber); }
   .v-avg { color: var(--green); }
   .v-vpp { color: var(--text); }
+  .v-hz { color: var(--red); }
 
   /* ── Controls ── */
   .card {
@@ -240,7 +241,7 @@
     font-size: 15.4px; color: var(--red); display: none;
   }
   .rec-row { display: flex; align-items: center; gap: 8px; margin-top: 10px; }
-  .rec-row label { font-size: 16.8px; color: var(--muted); flex: 1; }
+  .rec-row label { font-size: 16.8px; color: var(--muted); }
   .rec-row input[type=number] {
     width: 90px; background: var(--surface); border: 1px solid var(--border);
     border-radius: 6px; color: var(--text); font-size: 19.6px; font-weight: 700;
@@ -273,6 +274,10 @@
     <div class="dot" id="dot"></div>
     Осциллограф
   </div>
+      <div class="action-row">
+      <button class="btn btn-connect" id="btnConnect" style="padding-bottom: 1px;padding-top: 1px;">Подключить USB</button>
+      <button class="btn btn-pause" id="btnPause" style="padding-bottom: 1px;padding-top: 1px;" title="Пауза/Пуск">⏸</button>
+    </div>
   <div class="pill" id="pill">Не подключено</div>
 </header>
 
@@ -280,6 +285,16 @@
 <div id="notices"></div>
 
 <main>
+
+  <!-- Stats -->
+  <div class="stats-row">
+    <div class="stat"><div class="stat-label">Min, В</div><div class="stat-value v-min" id="sMin">—</div></div>
+    <div class="stat"><div class="stat-label">Max, В</div><div class="stat-value v-max" id="sMax">—</div></div>
+    <div class="stat"><div class="stat-label">Avg, В</div><div class="stat-value v-avg" id="sAvg">—</div></div>
+    <div class="stat"><div class="stat-label">Vpp, В</div><div class="stat-value v-vpp" id="sVpp">—</div></div>
+	<div class="stat"><div class="stat-label">Частота, Гц<span class="stat-value v-hz" id="burstFreq" style="display:block;margin-top:3px;">—</span></div></div>
+  </div>
+
   <!-- Chart -->
   <div class="chart-card">
     <div class="chart-meta">
@@ -293,62 +308,81 @@
     <div class="chart-resize-handle" id="chartResizeHandle" title="Потянуть для изменения высоты">⋯</div>
   </div>
 
-  <!-- Burst Frequency -->
-  <div class="burst-card">
-    <span class="burst-label">Частота всплесков:</span>
-    <span class="burst-value" id="burstFreq">—</span>
-    <span class="burst-unit" id="burstUnit">Гц</span>
-  </div>
-
   <!-- Voltage Range -->
   <div class="vrange-card">
-    <div class="card-title">Диапазон графика (ось Y)</div>
-    <div class="vrange-row">
-      <label>Мин. напряжение</label>
-      <input type="number" id="vrangeMin" value="0" step="0.1">
-      <span class="vrange-unit">В</span>
-    </div>
-    <div class="vrange-row">
-      <label>Макс. напряжение</label>
-      <input type="number" id="vrangeMax" value="5" step="0.1">
-      <span class="vrange-unit">В</span>
-    </div>
-    <div style="margin-top:8px; display:flex; gap:8px; align-items:center;">
-      <button class="vrange-auto-btn active" id="vrangeAutoBtn">⟳ Авто</button>
-      <span style="font-size:15.4px; color:var(--muted);" id="vrangeStatus">Автоподстройка включена</span>
-    </div>
-  </div>
-
-  <!-- Stats -->
-  <div class="stats-row">
-    <div class="stat"><div class="stat-label">Min, В</div><div class="stat-value v-min" id="sMin">—</div></div>
-    <div class="stat"><div class="stat-label">Max, В</div><div class="stat-value v-max" id="sMax">—</div></div>
-    <div class="stat"><div class="stat-label">Avg, В</div><div class="stat-value v-avg" id="sAvg">—</div></div>
-    <div class="stat"><div class="stat-label">Vpp, В</div><div class="stat-value v-vpp" id="sVpp">—</div></div>
+	<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
+		<div class="card-title">Диапазон графика (ось Y)</div>
+		<div style="margin-top:8px; display:flex; gap:8px; align-items:center;">
+			<span style="font-size:15.4px; color:var(--muted);" id="vrangeStatus">Автоподстройка включена</span>
+			<button class="vrange-auto-btn active" id="vrangeAutoBtn">⟳ Авто</button>
+		</div>
+	</div>
+    
+	<div style="display:flex;align-items:center;justify-content:start;gap:8px;">
+		<div class="vrange-row">
+		  <label style="margin-right:10px;">Мин. напряжение</label>
+		  <input type="number" id="vrangeMin" value="0" step="0.1">
+		  <span class="vrange-unit">В</span>
+		</div>
+		<div class="vrange-row">
+		  <label>Макс. напряжение</label>
+		  <input type="number" id="vrangeMax" value="5" step="0.1">
+		  <span class="vrange-unit">В</span>
+		</div>
+	</div>
+    
   </div>
 
   <!-- Controls -->
   <div class="card">
-    <div class="card-title">Задержка между сэмплами</div>
-
+	<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
+		<div class="card-title">Задержка между сэмплами</div>
+		<span style="font-size:15.4px;color:var(--muted)" id="timeHint"></span>
+	</div>
     <div class="delay-wrap">
       <div class="delay-top">
         <label for="slider">мкс</label>
         <input type="range" id="slider" min="1" max="5000" value="500" step="1">
-      </div>
-      <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
-        <div class="delay-input-wrap">
-          <input type="number" id="delayNum" min="1" max="99999" value="500">
-          <span class="delay-unit">мкс</span>
-        </div>
-        <span style="font-size:15.4px;color:var(--muted)" id="timeHint"></span>
-      </div>
+		  <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
+			<div class="delay-input-wrap">
+			  <input type="number" id="delayNum" min="1" max="99999" value="500">
+			  <span class="delay-unit">мкс</span>
+			</div>
+			
+		  </div>
+	  </div>
       <div class="presets" id="presets"></div>
+    </div>
+
+    <!-- Chart width -->
+    <div style="margin-top:14px;">
+		<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
+			<div class="card-title">Ширина графика</div>
+			<span style="font-size:15.4px;color:var(--muted)" id="widthHint"></span>
+		</div>
+      
+      <div class="delay-wrap">
+        <div class="delay-top">
+          <label for="widthSlider">точек</label>
+          <input type="range" id="widthSlider" min="32" max="4096" value="512" step="1">
+        
+			<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
+			  <div class="delay-input-wrap">
+				<input type="number" id="widthNum" min="32" max="4096" value="512">
+				<span class="delay-unit">точек</span>
+			  </div>
+			</div>
+		</div>
+        <div class="presets" id="widthPresets"></div>
+      </div>
     </div>
 
     <!-- Voltage divider -->
     <div style="margin-top:14px;">
-      <div class="card-title">Делитель напряжения</div>
+		<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
+			<div class="card-title">Делитель напряжения</div>
+			<div class="div-result" id="divResult" style="margin-top: 0px;margin-bottom: 8px;">Коэффициент: 1.00 ×　Макс: 5.0 В</div>
+		</div>
       <div class="div-tabs" id="divTabs">
         <button class="div-tab active" data-mode="none">Без делителя</button>
         <button class="div-tab" data-mode="vmax">Макс. напряжение</button>
@@ -378,31 +412,27 @@
         </div>
         <div class="div-hint" id="resHint"></div>
       </div>
-      <div class="div-result" id="divResult">Коэффициент: 1.00 ×　Макс: 5.0 В</div>
-    </div>
-
-    <div class="action-row">
-      <button class="btn btn-connect" id="btnConnect">Подключить USB</button>
-      <button class="btn btn-pause" id="btnPause" title="Пауза/Пуск">⏸</button>
     </div>
   </div>
 
   <!-- Recording -->
   <div class="card">
-    <div class="card-title">Запись данных</div>
-    <div class="rec-status-row">
-      <div class="rec-dot" id="recDot"></div>
-      <div class="rec-info" id="recInfo">Не записывается</div>
-    </div>
+	<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
+		<div class="card-title">Запись данных</div>
+		<div class="rec-status-row">
+			<div class="rec-info" id="recInfo">Не записывается</div>
+			<div class="rec-dot" id="recDot"></div>
+		</div>
+	</div>
     <div class="rec-row">
-      <label>Лимит кадров</label>
-      <input type="number" id="recMaxFrames" min="10" max="200000" value="5000" step="100">
+      <label>Лимит точек</label>
+      <input type="number" id="recMaxFrames" min="160" max="5000000" value="500000" step="1000">
     </div>
-    <div class="rec-warn" id="recWarn">Достигнут лимит кадров — запись остановлена автоматически.</div>
+    <div class="rec-warn" id="recWarn">Достигнут лимит точек — запись остановлена автоматически.</div>
     <div class="action-row">
       <button class="btn btn-rec" id="btnRec">⏺ Начать запись</button>
       <button class="btn btn-dl" id="btnDlSession" disabled>⬇ CSV (сессия)</button>
-      <button class="btn btn-dl" id="btnDlFrame">⬇ CSV (текущий кадр)</button>
+      <button class="btn btn-dl" id="btnDlFrame">⬇ CSV (текущее окно)</button>
       <button class="btn" id="btnRecClear" disabled>🗑 Очистить</button>
     </div>
   </div>
@@ -415,9 +445,12 @@
 // ════════════════════════════════════════════════════════════
 //  Константы
 // ════════════════════════════════════════════════════════════
-const NUM    = 512;
+let   WIDTH  = 512;   // сколько последних точек показывать на графике
+                       // (настраивается в интерфейсе, "ширина графика")
+const MIN_WIDTH = 32;
+const MAX_WIDTH = 4096;
 const VREF   = 5.0;   // опорное напряжение Arduino (5.0 или 3.3)
-const BAUD   = 115200;
+const BAUD   = 250000; // должно совпадать с BAUD_RATE в скетче Arduino
 
 // ════════════════════════════════════════════════════════════
 //  Определение платформы
@@ -457,24 +490,33 @@ let currentDelay = 500;
 let divider = 1;
 let sendTimer = null;   // debounce отправки команды
 
-// последний полученный кадр (для быстрого экспорта "текущий кадр")
+// снимок текущего видимого окна графика (для быстрого экспорта)
 let lastFrame = null; // { volts, delay, t: Date }
 
 // ════════════════════════════════════════════════════════════
 //  Chart.js
 // ════════════════════════════════════════════════════════════
+// Скользящий буфер отображаемых точек — именно он "едет" по экрану.
+// Новые сэмплы дописываются справа, старые вымываются слева.
+let rollingBuffer = new Array(WIDTH).fill(null);
+// Очередь чанков, которые уже пришли по Serial, но ещё не отрисованы —
+// разбирается в renderLoop() на каждый кадр анимации (см. ниже).
+let pendingChunks = [];
+let rafHandle = null;
+
 const scopeCtx = document.getElementById('scope').getContext('2d');
 const chart = new Chart(scopeCtx, {
   type: 'line',
   data: {
-    labels: Array.from({length: NUM}, (_, i) => i),
+    labels: Array.from({length: WIDTH}, (_, i) => i),
     datasets: [{
-      data: new Array(NUM).fill(0),
+      data: rollingBuffer,
       borderColor: '#3fb950',
       borderWidth: 1.2,
       pointRadius: 0,
       tension: 0,
-      fill: false
+      fill: false,
+      spanGaps: true
     }]
   },
   options: {
@@ -585,10 +627,13 @@ btnCon.addEventListener('click', async () => {
     writer = port.writable.getWriter();
     connected = true;
     lineBuffer = '';
+    pendingChunks = [];
+    rollingBuffer = new Array(WIDTH).fill(null);
     setStatus('ok');
     log('Подключено', 'rx');
     readLoop();
     scheduleSend();
+    if (!rafHandle) rafHandle = requestAnimationFrame(renderLoop);
   } catch (e) {
     if (e.name === 'NotFoundError' || /no.*port|не найден|устройств/i.test(e.message)) {
       log('Устройство не выбрано. На Android: проверьте OTG-кабель и разрешения USB.', 'err');
@@ -608,6 +653,8 @@ async function disconnect() {
   try { if (writer) { writer.releaseLock(); } } catch(_) {}
   try { if (port)   { await port.close(); } } catch(_) {}
   reader = null; writer = null; port = null;
+  pendingChunks = [];
+  if (rafHandle) { cancelAnimationFrame(rafHandle); rafHandle = null; }
   setStatus('');
   log('Отключено');
 }
@@ -669,22 +716,57 @@ async function readLoop() {
 //  Обработка входящих строк
 // ════════════════════════════════════════════════════════════
 function handleLine(line) {
-  if (line.startsWith('DATA:')) {
+  if (line.startsWith('D:')) {
     if (paused) return;
-    const raw = line.slice(5).split(',').map(Number);
-    if (raw.length < 10) return;
-    const volts = raw.map(v => (v / 1023) * VREF * divider);
-    chart.data.datasets[0].data = volts;
-    chart.update('none');
-    updateStats(volts);
-    document.getElementById('metaPoints').textContent = raw.length + ' точек';
-    lastFrame = { volts, delay: currentDelay, t: new Date() };
+    const raw = line.slice(2).split(',');
+    if (raw.length === 0) return;
+    const volts = new Array(raw.length);
+    for (let i = 0; i < raw.length; i++) {
+      volts[i] = (Number(raw[i]) / 1023) * VREF * divider;
+    }
+    // Чанк только складываем в очередь — сама отрисовка идёт в renderLoop(),
+    // синхронно с кадрами экрана, чтобы график двигался плавно, а не
+    // дёргался с той частотой, с которой приходят Serial-строки.
+    pendingChunks.push(volts);
     if (recording) recordFrame(volts, currentDelay);
   } else if (line.startsWith('OK:')) {
     log('← ' + line, 'rx');
   } else if (line.length) {
     log('← ' + line, 'rx');
   }
+}
+
+// ════════════════════════════════════════════════════════════
+//  Цикл плавной отрисовки (requestAnimationFrame)
+//  Чанки от Arduino могут приходить чаще, чем обновляется экран
+//  (особенно на минимальной задержке между сэмплами) — здесь они
+//  накапливаются и один раз за кадр анимации сдвигают график.
+//  Это и есть механизм "график едет, а не проскакивает":
+//  на каждый видеокадр буфер сдвигается ровно на столько точек,
+//  сколько реально пришло с Arduino — без ожидания "полного кадра".
+// ════════════════════════════════════════════════════════════
+function renderLoop() {
+  if (!connected) { rafHandle = null; return; }
+  if (pendingChunks.length) {
+    let newSamples = [];
+    for (const chunk of pendingChunks) {
+      for (let i = 0; i < chunk.length; i++) newSamples.push(chunk[i]);
+    }
+    pendingChunks = [];
+
+    rollingBuffer = rollingBuffer.concat(newSamples);
+    if (rollingBuffer.length > WIDTH) {
+      rollingBuffer = rollingBuffer.slice(rollingBuffer.length - WIDTH);
+    }
+    chart.data.datasets[0].data = rollingBuffer;
+    chart.update('none');
+
+    const valid = rollingBuffer.filter(v => v !== null);
+    if (valid.length) updateStats(valid);
+    document.getElementById('metaPoints').textContent = WIDTH + ' точек (окно)';
+    lastFrame = { volts: valid.slice(), delay: currentDelay, t: new Date() };
+  }
+  rafHandle = requestAnimationFrame(renderLoop);
 }
 
 // ════════════════════════════════════════════════════════════
@@ -815,7 +897,8 @@ const numInput = document.getElementById('delayNum');
 const timeHint = document.getElementById('timeHint');
 
 function formatTime(us) {
-  const total = us * NUM; // мкс
+  const total = us * WIDTH; // мкс — время, за которое график полностью
+                             // "проедет" по всей своей ширине
   if (total < 1000)      return total.toFixed(0) + ' мкс';
   if (total < 1000000)   return (total / 1000).toFixed(1) + ' мс';
   return (total / 1000000).toFixed(2) + ' с';
@@ -833,7 +916,7 @@ function applyDelay(val, fromSlider) {
   // мета
   document.getElementById('metaDelay').textContent = 'задержка: ' + val + ' мкс';
   document.getElementById('metaTime').textContent  = '⏱ ' + formatTime(val);
-  timeHint.textContent = 'Кадр: ' + formatTime(val);
+  timeHint.textContent = 'Окно: ' + formatTime(val);
 
   // подсветка пресетов
   document.querySelectorAll('.preset').forEach(b => {
@@ -860,7 +943,7 @@ slider.addEventListener('input', () => {
   numInput.value = v;
   document.getElementById('metaDelay').textContent = 'задержка: ' + v + ' мкс';
   document.getElementById('metaTime').textContent  = '⏱ ' + formatTime(v);
-  timeHint.textContent = 'Кадр: ' + formatTime(v);
+  timeHint.textContent = 'Окно: ' + formatTime(v);
   document.querySelectorAll('.preset').forEach(b => {
     b.classList.toggle('active-p', parseInt(b.dataset.v) === v);
   });
@@ -874,6 +957,64 @@ numInput.addEventListener('input', () => {
 numInput.addEventListener('change', () => {
   const v = parseInt(numInput.value);
   if (v > 0) applyDelay(v, false);
+});
+
+// ════════════════════════════════════════════════════════════
+//  Ширина графика (сколько последних точек показывать)
+//  Меняется только на клиенте — Arduino об этом не знает и
+//  продолжает стримить чанки как обычно.
+// ════════════════════════════════════════════════════════════
+const WIDTH_PRESETS = [128, 256, 512, 1024, 2048, 4096];
+const widthSlider = document.getElementById('widthSlider');
+const widthNum    = document.getElementById('widthNum');
+const widthHint   = document.getElementById('widthHint');
+
+function applyWidth(newWidth, fromSlider) {
+  newWidth = Math.max(MIN_WIDTH, Math.min(MAX_WIDTH, Math.round(newWidth)));
+  WIDTH = newWidth;
+
+  // Сохраняем "хвост" уже накопленных данных, только меняем длину окна
+  if (rollingBuffer.length > WIDTH) {
+    rollingBuffer = rollingBuffer.slice(rollingBuffer.length - WIDTH);
+  } else {
+    while (rollingBuffer.length < WIDTH) rollingBuffer.unshift(null);
+  }
+  chart.data.labels = Array.from({length: WIDTH}, (_, i) => i);
+  chart.data.datasets[0].data = rollingBuffer;
+  chart.update('none');
+
+  const sliderVal = Math.min(WIDTH, parseInt(widthSlider.max));
+  if (!fromSlider) widthSlider.value = sliderVal;
+  widthNum.value = WIDTH;
+  widthHint.textContent = 'Окно: ' + formatTime(currentDelay);
+  document.getElementById('metaPoints').textContent = WIDTH + ' точек (окно)';
+  document.querySelectorAll('.preset-w').forEach(b => {
+    b.classList.toggle('active-p', parseInt(b.dataset.v) === WIDTH);
+  });
+}
+
+const widthPresetsEl = document.getElementById('widthPresets');
+WIDTH_PRESETS.forEach(v => {
+  const b = document.createElement('button');
+  b.className = 'preset preset-w';
+  b.textContent = v;
+  b.dataset.v = v;
+  b.onclick = () => applyWidth(v, false);
+  widthPresetsEl.appendChild(b);
+});
+
+widthSlider.addEventListener('input', () => {
+  const v = parseInt(widthSlider.value);
+  widthNum.value = v;
+});
+widthSlider.addEventListener('change', () => applyWidth(parseInt(widthSlider.value), true));
+widthNum.addEventListener('input', () => {
+  const v = parseInt(widthNum.value);
+  if (v > 0) applyWidth(v, false);
+});
+widthNum.addEventListener('change', () => {
+  const v = parseInt(widthNum.value);
+  if (v > 0) applyWidth(v, false);
 });
 
 // ════════════════════════════════════════════════════════════
@@ -977,14 +1118,20 @@ const btnDlSession    = document.getElementById('btnDlSession');
 const btnDlFrame      = document.getElementById('btnDlFrame');
 const btnRecClear     = document.getElementById('btnRecClear');
 
+function totalRecordedPoints() {
+  let n = 0;
+  for (let i = 0; i < recordedFrames.length; i++) n += recordedFrames[i].volts.length;
+  return n;
+}
+
 function updateRecInfo() {
   const nFrames = recordedFrames.length;
-  const nPoints = nFrames * NUM;
+  const nPoints = totalRecordedPoints();
   const approxKB = Math.round((nPoints * 14) / 1024); // грубая оценка размера CSV
   if (recording) {
-    recInfo.innerHTML = `Идёт запись — <b>${nFrames}</b> кадров, <b>${nPoints}</b> точек (~${approxKB} КБ)`;
+    recInfo.innerHTML = `Идёт запись — <b>${nPoints}</b> точек, ${nFrames} чанков (~${approxKB} КБ)`;
   } else if (nFrames > 0) {
-    recInfo.innerHTML = `Остановлено — <b>${nFrames}</b> кадров, <b>${nPoints}</b> точек (~${approxKB} КБ)`;
+    recInfo.innerHTML = `Остановлено — <b>${nPoints}</b> точек, ${nFrames} чанков (~${approxKB} КБ)`;
   } else {
     recInfo.textContent = 'Не записывается';
   }
@@ -993,14 +1140,16 @@ function updateRecInfo() {
 }
 
 function recordFrame(volts, delay) {
-  const maxFrames = Math.max(10, parseInt(recMaxFramesEl.value) || 5000);
+  // Лимит задаётся в точках (не в чанках) — так понятнее, учитывая, что
+  // данные теперь приходят маленькими чанками, а не большими кадрами.
+  const maxPoints = Math.max(160, parseInt(recMaxFramesEl.value) || 500000);
   const tRelSec = (performance.now() - recordStartTime) / 1000;
   recordedFrames.push({ tRelSec, delay, volts: volts.slice() });
-  if (recordedFrames.length >= maxFrames) {
+  if (totalRecordedPoints() >= maxPoints) {
     recording = false;
     setRecUI();
     recWarn.style.display = 'block';
-    log('Запись остановлена: достигнут лимит кадров (' + maxFrames + ')', 'inf');
+    log('Запись остановлена: достигнут лимит точек (' + maxPoints + ')', 'inf');
   }
   updateRecInfo();
 }
@@ -1040,7 +1189,7 @@ function buildCSV(frames) {
   lines.push('sep=,');
   lines.push('# Осциллограф — экспорт данных');
   lines.push('# Дата экспорта: ' + new Date().toLocaleString('ru-RU'));
-  lines.push('# VREF=' + VREF + ' В, делитель=' + divider.toFixed(4) + ', точек в кадре=' + NUM);
+  lines.push('# VREF=' + VREF + ' В, делитель=' + divider.toFixed(4) + ', ширина окна графика=' + WIDTH);
   lines.push('frame,sample,t_s,voltage_v');
   frames.forEach((fr, fi) => {
     const dtSec = fr.delay / 1e6; // задержка между сэмплами в секундах
@@ -1082,8 +1231,8 @@ btnDlFrame.addEventListener('click', () => {
   if (!lastFrame) { log('Нет данных для экспорта — дождитесь первого кадра', 'err'); return; }
   const frameForExport = { tRelSec: 0, delay: lastFrame.delay, volts: lastFrame.volts };
   const csv = buildCSV([frameForExport]);
-  downloadCSV(csv, 'osc_frame_' + timestampForFilename() + '.csv');
-  log('Экспортирован текущий кадр', 'inf');
+  downloadCSV(csv, 'osc_window_' + timestampForFilename() + '.csv');
+  log('Экспортировано текущее окно', 'inf');
 });
 
 setRecUI();
@@ -1092,6 +1241,7 @@ setRecUI();
 //  Инициализация
 // ════════════════════════════════════════════════════════════
 applyDelay(500, false);
+applyWidth(512, false);
 calcDivider();
 applyVRange(); // применяем начальный авто-режим оси Y
 </script>
