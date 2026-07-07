@@ -265,6 +265,85 @@
   .burst-label { font-size: 16.8px; color: var(--muted); white-space: nowrap; }
   .burst-value { font-size: 26px; font-weight: 700; font-variant-numeric: tabular-nums; color: var(--blue); flex: 1; }
   .burst-unit  { font-size: 16.8px; color: var(--muted); }
+
+  /* ── Fit-to-screen layout ──
+     Пытаемся уместить всё на экране без прокрутки страницы целиком;
+     если график растянут (через resize-handle) и контента становится
+     больше, чем помещается — прокручивается только <main>, а шапка
+     остаётся на месте. */
+  html, body { height: 100%; overflow: hidden; }
+  body { min-height: 0; }
+  main { overflow-y: auto; min-height: 0; -webkit-overflow-scrolling: touch; }
+
+  /* ── Demo mode ── */
+  .btn-demo { background: transparent; border-color: var(--blue); color: var(--blue); flex: 0 0 auto; padding: 11px 12px; }
+  .btn-demo.on { background: var(--blue); color: #0d1117; }
+  .pill.demo { color: var(--blue); border-color: var(--blue); }
+  .dot.demo  { background: var(--blue); box-shadow: 0 0 7px var(--blue); }
+  .demo-card { display: none; }
+  .demo-card.show { display: block; }
+  .demo-row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-top: 8px; }
+  .demo-row select {
+    background: var(--surface); border: 1px solid var(--border); color: var(--text);
+    border-radius: 6px; padding: 6px 8px; font-size: 16.8px;
+  }
+  .demo-row label { font-size: 15.4px; color: var(--muted); white-space: nowrap; }
+  .demo-row input[type=number] {
+    width: 80px; background: var(--surface); border: 1px solid var(--border);
+    border-radius: 6px; color: var(--text); font-size: 16.8px; padding: 5px 8px; text-align: right;
+  }
+
+  /* ── Trigger ── */
+  .trigger-card input[type=range] { accent-color: var(--red); }
+  .trigger-row { display: flex; align-items: center; gap: 8px; margin-top: 10px; }
+  .trigger-row label { font-size: 16.8px; color: var(--muted); flex: 1; }
+  .trigger-row input[type=number] {
+    width: 90px; background: var(--surface); border: 1px solid var(--border);
+    border-radius: 6px; color: var(--text); font-size: 19.6px; font-weight: 700;
+    padding: 5px 8px; text-align: right; -moz-appearance: textfield;
+  }
+  .trigger-row input[type=number]:focus { outline: none; border-color: var(--red); }
+  .trigger-unit { font-size: 16.8px; color: var(--muted); }
+  .trigger-status { font-size: 15.4px; color: var(--muted); margin-top: 8px; }
+  .trigger-status.armed { color: var(--red); }
+
+  /* ── Clip badge ── */
+  .clip-badge {
+    display: none; font-size: 14px; font-weight: 700; color: var(--red);
+    border: 1px solid var(--red); border-radius: 20px; padding: 2px 9px;
+    animation: recBlink 0.8s infinite;
+  }
+  .clip-badge.show { display: inline-block; }
+
+  /* ── Cursors ── */
+  .btn-cur {
+    font-size: 14px; padding: 4px 10px; border-radius: 20px;
+    border: 1px solid var(--border); background: var(--card); color: var(--muted); cursor: pointer;
+  }
+  .btn-cur.on { color: var(--blue); border-color: var(--blue); background: rgba(88,166,255,.1); }
+  .cursor-line {
+    position: absolute; top: 0; bottom: 0; width: 1px; background: var(--blue);
+    pointer-events: none; display: none;
+  }
+  .cursor-line.show { display: block; }
+  .cursor-info {
+    font-size: 15.4px; color: var(--blue); margin-top: 6px; min-height: 1.4em;
+  }
+
+  /* ── Zoom / Pan row ── */
+  .pz-row { display: flex; align-items: center; gap: 8px; margin-top: 8px; }
+  .pz-btn {
+    flex: 0 0 auto; width: 32px; height: 32px; border-radius: 8px;
+    border: 1px solid var(--border); background: var(--surface); color: var(--text);
+    font-size: 17px; cursor: pointer; display: flex; align-items: center; justify-content: center;
+  }
+  .pz-btn:active { background: var(--card); }
+  #panSlider { flex: 1; accent-color: var(--blue); }
+  #panSlider:disabled { opacity: 0.35; }
+  .pz-label {
+    font-size: 14px; color: var(--muted); white-space: nowrap; min-width: 76px; text-align: right;
+  }
+  .pz-label.live { color: var(--green); }
 </style>
 </head>
 <body>
@@ -276,13 +355,32 @@
   </div>
       <div class="action-row">
       <button class="btn btn-connect" id="btnConnect" style="padding-bottom: 1px;padding-top: 1px;">Подключить USB</button>
-      <button class="btn btn-pause" id="btnPause" style="padding-bottom: 1px;padding-top: 1px;" title="Пауза/Пуск">⏸</button>
+      <button class="btn btn-demo" id="btnDemo" style="padding-bottom: 1px;padding-top: 1px;" title="Демо-режим без Arduino">🧪 Demo</button>
+      <button class="btn btn-pause" id="btnPause" style="padding-bottom: 1px;padding-top: 1px;" title="Заморозить/оживить график">⏸</button>
     </div>
   <div class="pill" id="pill">Не подключено</div>
 </header>
 
 <!-- Platform notices inserted here by JS -->
 <div id="notices"></div>
+
+<div class="card demo-card" id="demoCard" style="margin: 10px 12px 0;">
+  <div class="card-title">Демо-режим (генератор сигнала без Arduino)</div>
+  <div class="demo-row">
+    <label>Форма</label>
+    <select id="demoWaveform">
+      <option value="sine">Синус</option>
+      <option value="square">Меандр</option>
+      <option value="triangle">Треугольник</option>
+      <option value="noise">Шум</option>
+    </select>
+    <label>Частота</label>
+    <input type="number" id="demoFreq" min="0.1" max="400" step="0.1" value="50">
+    <span class="delay-unit">Гц</span>
+    <label>Шум</label>
+    <input type="number" id="demoNoise" min="0" max="0.5" step="0.01" value="0.02">
+  </div>
+</div>
 
 <main>
 
@@ -292,7 +390,7 @@
     <div class="stat"><div class="stat-label">Max, В</div><div class="stat-value v-max" id="sMax">—</div></div>
     <div class="stat"><div class="stat-label">Avg, В</div><div class="stat-value v-avg" id="sAvg">—</div></div>
     <div class="stat"><div class="stat-label">Vpp, В</div><div class="stat-value v-vpp" id="sVpp">—</div></div>
-	<div class="stat"><div class="stat-label">Частота, Гц<span class="stat-value v-hz" id="burstFreq" style="display:block;margin-top:3px;">—</span></div></div>
+	<div class="stat"><div class="stat-label">Частота</div><div class="stat-value v-hz"><span id="burstFreq">—</span> <span id="burstUnit" style="font-size:14px;">Гц</span></div></div>
   </div>
 
   <!-- Chart -->
@@ -301,11 +399,22 @@
       <span id="metaPoints">512 точек</span>
       <span class="meta-time" id="metaTime">—</span>
       <span id="metaDelay">задержка: 500 мкс</span>
+      <span class="clip-badge" id="clipBadge">⚠ Перегрузка</span>
+      <button class="btn-cur" id="btnCursors" title="Измерительные курсоры">📏 Курсоры</button>
     </div>
     <div class="chart-wrap" id="chartWrap">
       <canvas id="scope"></canvas>
+      <div class="cursor-line" id="curLine1"></div>
+      <div class="cursor-line" id="curLine2"></div>
     </div>
+    <div class="cursor-info" id="cursorInfo"></div>
     <div class="chart-resize-handle" id="chartResizeHandle" title="Потянуть для изменения высоты">⋯</div>
+    <div class="pz-row">
+      <button class="pz-btn" id="btnZoomOut" title="Отдалить">➖</button>
+      <input type="range" id="panSlider" min="0" max="0" value="0" title="Прокрутка по истории">
+      <button class="pz-btn" id="btnZoomIn" title="Приблизить">➕</button>
+      <span class="pz-label live" id="pzLabel">● Прямой эфир</span>
+    </div>
   </div>
 
   <!-- Voltage Range -->
@@ -333,6 +442,23 @@
     
   </div>
 
+  <!-- Trigger -->
+  <div class="card trigger-card">
+    <div class="card-title">Триггер (стабилизация периодического сигнала)</div>
+    <div class="div-tabs" id="trigTabs">
+      <button class="div-tab active" data-mode="off">Выкл</button>
+      <button class="div-tab" data-mode="rising">Фронт ↑</button>
+      <button class="div-tab" data-mode="falling">Фронт ↓</button>
+    </div>
+    <div class="trigger-row">
+      <label for="trigLevel">Уровень срабатывания</label>
+      <input type="number" id="trigLevel" min="-50" max="50" step="0.05" value="2.5">
+      <span class="trigger-unit">В</span>
+    </div>
+    <input type="range" id="trigLevelSlider" min="0" max="5" step="0.02" value="2.5" style="width:100%;margin-top:8px;">
+    <div class="trigger-status" id="trigStatus">Триггер выключен — окно графика просто едет по последним точкам</div>
+  </div>
+
   <!-- Controls -->
   <div class="card">
 	<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
@@ -353,19 +479,20 @@
 	  </div>
       <div class="presets" id="presets"></div>
     </div>
+  </div>
 
-    <!-- Chart width -->
-    <div style="margin-top:14px;">
-		<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
-			<div class="card-title">Ширина графика</div>
-			<span style="font-size:15.4px;color:var(--muted)" id="widthHint"></span>
-		</div>
+  <!-- Chart width -->
+  <div class="card">
+	<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
+		<div class="card-title">Ширина графика</div>
+		<span style="font-size:15.4px;color:var(--muted)" id="widthHint"></span>
+	</div>
+
+    <div class="delay-wrap">
+      <div class="delay-top">
+        <label for="widthSlider">точек</label>
+        <input type="range" id="widthSlider" min="32" max="4096" value="512" step="1">
       
-      <div class="delay-wrap">
-        <div class="delay-top">
-          <label for="widthSlider">точек</label>
-          <input type="range" id="widthSlider" min="32" max="4096" value="512" step="1">
-        
 			<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
 			  <div class="delay-input-wrap">
 				<input type="number" id="widthNum" min="32" max="4096" value="512">
@@ -373,45 +500,44 @@
 			  </div>
 			</div>
 		</div>
-        <div class="presets" id="widthPresets"></div>
-      </div>
+      <div class="presets" id="widthPresets"></div>
     </div>
+  </div>
 
-    <!-- Voltage divider -->
-    <div style="margin-top:14px;">
-		<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
-			<div class="card-title">Делитель напряжения</div>
-			<div class="div-result" id="divResult" style="margin-top: 0px;margin-bottom: 8px;">Коэффициент: 1.00 ×　Макс: 5.0 В</div>
-		</div>
-      <div class="div-tabs" id="divTabs">
-        <button class="div-tab active" data-mode="none">Без делителя</button>
-        <button class="div-tab" data-mode="vmax">Макс. напряжение</button>
-        <button class="div-tab" data-mode="res">Резисторы</button>
+  <!-- Voltage divider -->
+  <div class="card">
+	<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
+		<div class="card-title">Делитель напряжения</div>
+		<div class="div-result" id="divResult" style="margin-top: 0px;margin-bottom: 8px;">Коэффициент: 1.00 ×　Макс: 5.0 В</div>
+	</div>
+    <div class="div-tabs" id="divTabs">
+      <button class="div-tab active" data-mode="none">Без делителя</button>
+      <button class="div-tab" data-mode="vmax">Макс. напряжение</button>
+      <button class="div-tab" data-mode="res">Резисторы</button>
+    </div>
+    <div class="div-panel" id="dpNone">
+      <div class="div-hint">Коэффициент = 1 × (сигнал 0–5 В напрямую)</div>
+    </div>
+    <div class="div-panel" id="dpVmax" style="display:none">
+      <div class="div-row">
+        <label>Макс. напряжение сигнала</label>
+        <input type="number" id="vmaxInput" min="1" max="9999" value="12" step="0.1">
+        <span class="div-unit">В</span>
       </div>
-      <div class="div-panel" id="dpNone">
-        <div class="div-hint">Коэффициент = 1 × (сигнал 0–5 В напрямую)</div>
+      <div class="div-hint" id="vmaxHint"></div>
+    </div>
+    <div class="div-panel" id="dpRes" style="display:none">
+      <div class="div-row">
+        <label>R1 (верхний)</label>
+        <input type="number" id="r1Input" min="0" max="9999999" value="10000" step="100">
+        <span class="div-unit">Ом</span>
       </div>
-      <div class="div-panel" id="dpVmax" style="display:none">
-        <div class="div-row">
-          <label>Макс. напряжение сигнала</label>
-          <input type="number" id="vmaxInput" min="1" max="9999" value="12" step="0.1">
-          <span class="div-unit">В</span>
-        </div>
-        <div class="div-hint" id="vmaxHint"></div>
+      <div class="div-row" style="margin-top:6px">
+        <label>R2 (нижний, к GND)</label>
+        <input type="number" id="r2Input" min="1" max="9999999" value="1000" step="100">
+        <span class="div-unit">Ом</span>
       </div>
-      <div class="div-panel" id="dpRes" style="display:none">
-        <div class="div-row">
-          <label>R1 (верхний)</label>
-          <input type="number" id="r1Input" min="0" max="9999999" value="10000" step="100">
-          <span class="div-unit">Ом</span>
-        </div>
-        <div class="div-row" style="margin-top:6px">
-          <label>R2 (нижний, к GND)</label>
-          <input type="number" id="r2Input" min="1" max="9999999" value="1000" step="100">
-          <span class="div-unit">Ом</span>
-        </div>
-        <div class="div-hint" id="resHint"></div>
-      </div>
+      <div class="div-hint" id="resHint"></div>
     </div>
   </div>
 
@@ -433,6 +559,7 @@
       <button class="btn btn-rec" id="btnRec">⏺ Начать запись</button>
       <button class="btn btn-dl" id="btnDlSession" disabled>⬇ CSV (сессия)</button>
       <button class="btn btn-dl" id="btnDlFrame">⬇ CSV (текущее окно)</button>
+      <button class="btn btn-dl" id="btnPngExport">📷 PNG графика</button>
       <button class="btn" id="btnRecClear" disabled>🗑 Очистить</button>
     </div>
   </div>
@@ -485,7 +612,8 @@ if (!hasSerial) {
 //  Состояние
 // ════════════════════════════════════════════════════════════
 let port = null, reader = null, writer = null;
-let connected = false, paused = false;
+let connected = false;
+let userDisconnecting = false; // true только когда сам пользователь нажал «Отключить»
 let currentDelay = 500;
 let divider = 1;
 let sendTimer = null;   // debounce отправки команды
@@ -494,14 +622,37 @@ let sendTimer = null;   // debounce отправки команды
 let lastFrame = null; // { volts, delay, t: Date }
 
 // ════════════════════════════════════════════════════════════
-//  Chart.js
+//  История сэмплов + зум/пан/триггер
 // ════════════════════════════════════════════════════════════
-// Скользящий буфер отображаемых точек — именно он "едет" по экрану.
-// Новые сэмплы дописываются справа, старые вымываются слева.
-let rollingBuffer = new Array(WIDTH).fill(null);
-// Очередь чанков, которые уже пришли по Serial, но ещё не отрисованы —
-// разбирается в renderLoop() на каждый кадр анимации (см. ниже).
-let pendingChunks = [];
+// Вместо "только последних WIDTH точек" храним более длинную историю —
+// это и даёт возможность отматывать назад (пан) и увеличивать/уменьшать
+// масштаб (зум) независимо от текущего живого потока. Триггер тоже ищет
+// точку синхронизации внутри этой истории.
+const HISTORY_MAX = 20000; // ~ верхняя граница длины истории, точек
+let sampleHistory = [];          // [{raw, v}], raw — 0..1023, v — вольты после делителя
+
+let zoomLevel   = 1;       // >1 — приближено (меньше точек в окне), <1 — отдалено
+let panOffset   = 0;       // на сколько сэмплов "назад" от живого края смотрим
+let liveFollow  = true;    // true = автоматически следим за живым краем (обычный режим)
+let currentViewPoints = WIDTH; // сколько точек реально показывается сейчас (обновляется в renderView)
+let lastStartIdx = 0;      // абсолютный индекс в sampleHistory, с которого начинается текущее окно (обновляется в renderView) — нужен, чтобы зум колесом мог "прицелиться" в точку под курсором
+
+let triggerMode  = 'off';  // 'off' | 'rising' | 'falling'
+let triggerLevel = 2.5;    // В
+
+let cursorMode   = false;
+let cursorPoints = [];     // [{idx, v}] максимум 2 точки
+
+let clipHideTimer = null;
+
+let demoMode = false;
+let demoTimer = null;
+let demoPhase = 0;
+let demoWaveform = 'sine';
+let demoFreq = 50;
+let demoNoise = 0.02;
+let demoPrevDelay = null;
+
 let rafHandle = null;
 
 const scopeCtx = document.getElementById('scope').getContext('2d');
@@ -510,7 +661,7 @@ const chart = new Chart(scopeCtx, {
   data: {
     labels: Array.from({length: WIDTH}, (_, i) => i),
     datasets: [{
-      data: rollingBuffer,
+      data: new Array(WIDTH).fill(null),
       borderColor: '#3fb950',
       borderWidth: 1.2,
       pointRadius: 0,
@@ -618,6 +769,7 @@ function setStatus(s) {
 // ════════════════════════════════════════════════════════════
 btnCon.addEventListener('click', async () => {
   if (connected) { await disconnect(); return; }
+  if (demoMode) { log('Сначала выключите демо-режим', 'err'); return; }
   if (!hasSerial) { log('WebSerial не поддерживается', 'err'); return; }
   try {
     // Пустой массив filters — показываем ВСЕ USB-устройства (нужно для Android OTG)
@@ -626,9 +778,10 @@ btnCon.addEventListener('click', async () => {
     await port.open({ baudRate: BAUD, bufferSize: 65536 });
     writer = port.writable.getWriter();
     connected = true;
+    userDisconnecting = false;
     lineBuffer = '';
-    pendingChunks = [];
-    rollingBuffer = new Array(WIDTH).fill(null);
+    sampleHistory = [];
+    liveFollow = true; panOffset = 0; cursorPoints = [];
     setStatus('ok');
     log('Подключено', 'rx');
     readLoop();
@@ -648,15 +801,46 @@ btnCon.addEventListener('click', async () => {
 });
 
 async function disconnect() {
+  userDisconnecting = true;
   connected = false;
   try { if (reader) { await reader.cancel(); } } catch(_) {}
   try { if (writer) { writer.releaseLock(); } } catch(_) {}
   try { if (port)   { await port.close(); } } catch(_) {}
   reader = null; writer = null; port = null;
-  pendingChunks = [];
-  if (rafHandle) { cancelAnimationFrame(rafHandle); rafHandle = null; }
+  if (rafHandle && !demoMode) { cancelAnimationFrame(rafHandle); rafHandle = null; }
   setStatus('');
   log('Отключено');
+}
+
+// ════════════════════════════════════════════════════════════
+//  Автопереподключение при неожиданном обрыве связи
+//  (плохой контакт кабеля и т.п.) — при разрыве, который НЕ был
+//  инициирован пользователем, пробуем несколько раз переоткрыть
+//  тот же порт, прежде чем сдаться.
+// ════════════════════════════════════════════════════════════
+async function handleUnexpectedDisconnect(errMsg) {
+  setStatus('err');
+  log('Разрыв связи (' + errMsg + '). Пробуем переподключиться…', 'err');
+  connected = false;
+  for (let attempt = 1; attempt <= 5; attempt++) {
+    await new Promise(r => setTimeout(r, Math.min(800 * attempt, 4000)));
+    if (userDisconnecting || !port) return; // пользователь сам отключился, пока мы ждали
+    try {
+      await port.open({ baudRate: BAUD, bufferSize: 65536 });
+      writer = port.writable.getWriter();
+      connected = true;
+      setStatus('ok');
+      log('Переподключено', 'rx');
+      readLoop();
+      scheduleSend();
+      if (!rafHandle) rafHandle = requestAnimationFrame(renderLoop);
+      return;
+    } catch (e) {
+      log('Попытка ' + attempt + ' не удалась: ' + e.message, 'err');
+    }
+  }
+  log('Не удалось переподключиться автоматически. Нажмите «Подключить USB».', 'err');
+  setStatus('');
 }
 
 // ════════════════════════════════════════════════════════════
@@ -700,9 +884,8 @@ async function readLoop() {
         continue;
       }
       // Любая другая ошибка — настоящий обрыв
-      if (connected) {
-        log('Разрыв: ' + e.message, 'err');
-        setStatus('err');
+      if (connected && !userDisconnecting) {
+        handleUnexpectedDisconnect(e.message);
       }
       break;
     }
@@ -717,18 +900,9 @@ async function readLoop() {
 // ════════════════════════════════════════════════════════════
 function handleLine(line) {
   if (line.startsWith('D:')) {
-    if (paused) return;
-    const raw = line.slice(2).split(',');
+    const raw = line.slice(2).split(',').map(Number);
     if (raw.length === 0) return;
-    const volts = new Array(raw.length);
-    for (let i = 0; i < raw.length; i++) {
-      volts[i] = (Number(raw[i]) / 1023) * VREF * divider;
-    }
-    // Чанк только складываем в очередь — сама отрисовка идёт в renderLoop(),
-    // синхронно с кадрами экрана, чтобы график двигался плавно, а не
-    // дёргался с той частотой, с которой приходят Serial-строки.
-    pendingChunks.push(volts);
-    if (recording) recordFrame(volts, currentDelay);
+    processRawChunk(raw);
   } else if (line.startsWith('OK:')) {
     log('← ' + line, 'rx');
   } else if (line.length) {
@@ -737,35 +911,146 @@ function handleLine(line) {
 }
 
 // ════════════════════════════════════════════════════════════
-//  Цикл плавной отрисовки (requestAnimationFrame)
-//  Чанки от Arduino могут приходить чаще, чем обновляется экран
-//  (особенно на минимальной задержке между сэмплами) — здесь они
-//  накапливаются и один раз за кадр анимации сдвигают график.
-//  Это и есть механизм "график едет, а не проскакивает":
-//  на каждый видеокадр буфер сдвигается ровно на столько точек,
-//  сколько реально пришло с Arduino — без ожидания "полного кадра".
+//  Приём одного чанка сырых отсчётов АЦП (0..1023) — общая точка входа
+//  и для реального Serial, и для демо-режима. Складывает данные в
+//  «историю», по которой затем строится текущее окно графика
+//  (см. renderView) — это и даёт возможность зума/пана и триггера.
+// ════════════════════════════════════════════════════════════
+function processRawChunk(rawArr) {
+  let clipped = false;
+  for (let i = 0; i < rawArr.length; i++) {
+    const r = rawArr[i];
+    if (r <= 0 || r >= 1023) clipped = true;
+    sampleHistory.push({ raw: r, v: (r / 1023) * VREF * divider });
+  }
+  if (sampleHistory.length > HISTORY_MAX) {
+    sampleHistory.splice(0, sampleHistory.length - HISTORY_MAX);
+  }
+  if (clipped) showClipBadge();
+  if (recording) {
+    const volts = rawArr.map(r => (r / 1023) * VREF * divider);
+    recordFrame(volts, currentDelay);
+  }
+}
+
+function showClipBadge() {
+  const el = document.getElementById('clipBadge');
+  el.classList.add('show');
+  clearTimeout(clipHideTimer);
+  clipHideTimer = setTimeout(() => el.classList.remove('show'), 1200);
+}
+
+// ════════════════════════════════════════════════════════════
+//  Поиск точки триггера в истории (для стабилизации периодического
+//  сигнала — без этого окно графика просто "едет", и период плывёт).
+//  Ищем ПОСЛЕДНЕЕ пересечение уровня в нужном направлении в пределах
+//  разумного окна поиска и ставим его в начало отображаемого окна.
+// ════════════════════════════════════════════════════════════
+function findTriggerStart(viewPoints) {
+  if (triggerMode === 'off') return null;
+  // Точка триггера должна оставлять СПРАВА от себя целое окно уже
+  // накопленных точек (viewPoints), иначе после неё будет "пусто" —
+  // ведь будущие сэмплы ещё не пришли. Поэтому ищем не с самого
+  // конца истории, а с отступом в viewPoints от конца.
+  const latestPossible = sampleHistory.length - viewPoints;
+  if (latestPossible < 1) return null; // данных пока меньше, чем на одно окно
+  const searchLen = Math.min(latestPossible, viewPoints * 4);
+  const from = latestPossible - searchLen;
+  for (let i = latestPossible; i > from; i--) {
+    const prev = sampleHistory[i - 1].v, cur = sampleHistory[i].v;
+    if (triggerMode === 'rising'  && prev < triggerLevel && cur >= triggerLevel) return i;
+    if (triggerMode === 'falling' && prev > triggerLevel && cur <= triggerLevel) return i;
+  }
+  return null; // сигнал ни разу не пересёк уровень — ждём (покажем обычный "живой" хвост)
+}
+
+function maxPanOffset(viewPoints) {
+  return Math.max(0, sampleHistory.length - viewPoints);
+}
+
+// ════════════════════════════════════════════════════════════
+//  Вычислить текущее окно для отображения (зум/пан/триггер учтены)
+//  и перерисовать график + статистику + курсоры. Вызывается и из
+//  цикла requestAnimationFrame (пока идёт живой поток), и напрямую
+//  из обработчиков зума/пана/колеса — чтобы взаимодействие с историей
+//  оставалось отзывчивым даже когда новых данных не приходит.
+// ════════════════════════════════════════════════════════════
+function renderView() {
+  const baseViewPoints = Math.round(WIDTH / zoomLevel);
+  const viewPoints = Math.max(16, Math.min(HISTORY_MAX, baseViewPoints));
+  currentViewPoints = viewPoints;
+
+  let startIdx;
+  let armed = false;
+  if (liveFollow && triggerMode !== 'off') {
+    const trigIdx = findTriggerStart(viewPoints);
+    if (trigIdx !== null) { startIdx = trigIdx; armed = true; }
+    else startIdx = Math.max(0, sampleHistory.length - viewPoints);
+  } else if (liveFollow) {
+    startIdx = Math.max(0, sampleHistory.length - viewPoints);
+  } else {
+    startIdx = Math.max(0, sampleHistory.length - viewPoints - panOffset);
+  }
+  lastStartIdx = startIdx;
+
+  const slice = sampleHistory.slice(startIdx, startIdx + viewPoints);
+  let volts = slice.map(p => p.v);
+  if (volts.length < viewPoints) {
+    volts = volts.concat(new Array(viewPoints - volts.length).fill(null));
+  }
+
+  if (chart.data.labels.length !== viewPoints) {
+    chart.data.labels = Array.from({ length: viewPoints }, (_, i) => i);
+  }
+  chart.data.datasets[0].data = volts;
+  chart.update('none');
+
+  const valid = volts.filter(v => v !== null);
+  if (valid.length) updateStats(valid);
+  lastFrame = { volts: valid.slice(), delay: currentDelay, t: new Date() };
+
+  document.getElementById('metaPoints').textContent = viewPoints + ' точек (окно)';
+
+  // Статус триггера
+  const trigStatusEl = document.getElementById('trigStatus');
+  if (triggerMode === 'off') {
+    trigStatusEl.textContent = 'Триггер выключен — окно графика просто едет по последним точкам';
+    trigStatusEl.classList.remove('armed');
+  } else if (armed) {
+    trigStatusEl.textContent = '● Синхронизировано по ' + (triggerMode === 'rising' ? 'переднему' : 'заднему') + ' фронту';
+    trigStatusEl.classList.add('armed');
+  } else {
+    trigStatusEl.textContent = 'Ожидание пересечения уровня… (показан живой хвост без синхронизации)';
+    trigStatusEl.classList.remove('armed');
+  }
+
+  // Панель зум/пан
+  const maxOff = maxPanOffset(viewPoints);
+  const panSlider = document.getElementById('panSlider');
+  panSlider.max = maxOff;
+  const pzLabel = document.getElementById('pzLabel');
+  if (liveFollow) {
+    panSlider.value = maxOff;
+    pzLabel.textContent = '● Прямой эфир';
+    pzLabel.classList.add('live');
+  } else {
+    panSlider.value = panOffset;
+    const dtSec = currentDelay / 1e6;
+    const secBack = (panOffset) * dtSec;
+    pzLabel.textContent = '⏱ -' + secBack.toFixed(secBack < 1 ? 3 : 1) + 'с';
+    pzLabel.classList.remove('live');
+  }
+
+  updateCursorOverlay();
+}
+
+// ════════════════════════════════════════════════════════════
+//  Цикл requestAnimationFrame — просто гоняет renderView(), пока
+//  идёт живой поток (реальный порт или демо-режим).
 // ════════════════════════════════════════════════════════════
 function renderLoop() {
-  if (!connected) { rafHandle = null; return; }
-  if (pendingChunks.length) {
-    let newSamples = [];
-    for (const chunk of pendingChunks) {
-      for (let i = 0; i < chunk.length; i++) newSamples.push(chunk[i]);
-    }
-    pendingChunks = [];
-
-    rollingBuffer = rollingBuffer.concat(newSamples);
-    if (rollingBuffer.length > WIDTH) {
-      rollingBuffer = rollingBuffer.slice(rollingBuffer.length - WIDTH);
-    }
-    chart.data.datasets[0].data = rollingBuffer;
-    chart.update('none');
-
-    const valid = rollingBuffer.filter(v => v !== null);
-    if (valid.length) updateStats(valid);
-    document.getElementById('metaPoints').textContent = WIDTH + ' точек (окно)';
-    lastFrame = { volts: valid.slice(), delay: currentDelay, t: new Date() };
-  }
+  if (!connected && !demoMode) { rafHandle = null; return; }
+  renderView();
   rafHandle = requestAnimationFrame(renderLoop);
 }
 
@@ -817,7 +1102,7 @@ function detectBurstFreq(volts) {
   const vpp = mx - mn;
   if (vpp < 0.05) {
     document.getElementById('burstFreq').textContent = '—';
-    document.getElementById('burstUnit').textContent = '';
+    document.getElementById('burstUnit').textContent = 'всплесков/кадр';
     return;
   }
   // Порог — 50% размаха выше минимума
@@ -949,14 +1234,14 @@ slider.addEventListener('input', () => {
   });
 });
 // 'change' — отправляем только при отпускании
-slider.addEventListener('change', () => applyDelay(parseInt(slider.value), true));
+slider.addEventListener('change', () => { applyDelay(parseInt(slider.value), true); saveSettings(); });
 numInput.addEventListener('input', () => {
   const v = parseInt(numInput.value);
   if (v > 0) applyDelay(v, false);
 });
 numInput.addEventListener('change', () => {
   const v = parseInt(numInput.value);
-  if (v > 0) applyDelay(v, false);
+  if (v > 0) { applyDelay(v, false); saveSettings(); }
 });
 
 // ════════════════════════════════════════════════════════════
@@ -973,24 +1258,18 @@ function applyWidth(newWidth, fromSlider) {
   newWidth = Math.max(MIN_WIDTH, Math.min(MAX_WIDTH, Math.round(newWidth)));
   WIDTH = newWidth;
 
-  // Сохраняем "хвост" уже накопленных данных, только меняем длину окна
-  if (rollingBuffer.length > WIDTH) {
-    rollingBuffer = rollingBuffer.slice(rollingBuffer.length - WIDTH);
-  } else {
-    while (rollingBuffer.length < WIDTH) rollingBuffer.unshift(null);
-  }
-  chart.data.labels = Array.from({length: WIDTH}, (_, i) => i);
-  chart.data.datasets[0].data = rollingBuffer;
-  chart.update('none');
+  // Сама перерисовка теперь идёт через renderView() (учитывает ещё и
+  // зум/пан/триггер), поэтому здесь просто обновляем WIDTH и UI-подписи.
+  renderView();
 
   const sliderVal = Math.min(WIDTH, parseInt(widthSlider.max));
   if (!fromSlider) widthSlider.value = sliderVal;
   widthNum.value = WIDTH;
   widthHint.textContent = 'Окно: ' + formatTime(currentDelay);
-  document.getElementById('metaPoints').textContent = WIDTH + ' точек (окно)';
   document.querySelectorAll('.preset-w').forEach(b => {
     b.classList.toggle('active-p', parseInt(b.dataset.v) === WIDTH);
   });
+  saveSettings();
 }
 
 const widthPresetsEl = document.getElementById('widthPresets');
@@ -1053,16 +1332,20 @@ function calcDivider() {
   updateChartMax();
 }
 
-// Переключение режимов
-document.querySelectorAll('.div-tab').forEach(tab => {
+// Переключение режимов (только вкладки делителя напряжения — важно
+// ограничить область поиска контейнером #divTabs, иначе .div-tab
+// заодно поймает и вкладки триггера, которые используют тот же класс
+// ради общего стиля)
+document.querySelectorAll('#divTabs .div-tab').forEach(tab => {
   tab.addEventListener('click', () => {
     divMode = tab.dataset.mode;
-    document.querySelectorAll('.div-tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('#divTabs .div-tab').forEach(t => t.classList.remove('active'));
     tab.classList.add('active');
     dpNone.style.display = divMode === 'none' ? '' : 'none';
     dpVmax.style.display = divMode === 'vmax' ? '' : 'none';
     dpRes.style.display  = divMode === 'res'  ? '' : 'none';
     calcDivider();
+    saveSettings();
   });
 });
 
@@ -1077,8 +1360,15 @@ r2Input.addEventListener('change',   calcDivider);
 //  Пауза
 // ════════════════════════════════════════════════════════════
 document.getElementById('btnPause').addEventListener('click', () => {
-  paused = !paused;
-  document.getElementById('btnPause').textContent = paused ? '▶' : '⏸';
+  // Раньше пауза останавливала приём данных совсем. Теперь она лишь
+  // замораживает окно (перестаёт следовать за живым краем) — данные
+  // продолжают копиться в истории, так что можно листать/зумить назад,
+  // а по возврату в «эфир» ничего не потеряется.
+  liveFollow = !liveFollow;
+  if (liveFollow) panOffset = 0;
+  document.getElementById('btnPause').textContent = liveFollow ? '⏸' : '▶';
+  cursorPoints = [];
+  renderView();
 });
 
 // ════════════════════════════════════════════════════════════
@@ -1186,16 +1476,16 @@ btnRecClear.addEventListener('click', () => {
 // чтобы в Excel/LibreOffice выделить t_s и voltage_v и построить график.
 function buildCSV(frames) {
   const lines = [];
-  lines.push('sep=,');
+  lines.push('sep=;');
   lines.push('# Осциллограф — экспорт данных');
   lines.push('# Дата экспорта: ' + new Date().toLocaleString('ru-RU'));
-  lines.push('# VREF=' + VREF + ' В, делитель=' + divider.toFixed(4) + ', ширина окна графика=' + WIDTH);
-  lines.push('frame,sample,t_s,voltage_v');
+  lines.push('# VREF=' + VREF + ' В, делитель=' + divider.toFixed(4).replace('.', ',') + ', ширина окна графика=' + WIDTH);
+  lines.push('frame;sample;t_s;voltage_v');
   frames.forEach((fr, fi) => {
     const dtSec = fr.delay / 1e6; // задержка между сэмплами в секундах
     for (let i = 0; i < fr.volts.length; i++) {
       const t = fr.tRelSec + i * dtSec;
-      lines.push(fi + ',' + i + ',' + t.toFixed(6) + ',' + fr.volts[i].toFixed(4));
+      lines.push(fi + ';' + i + ';' + t.toFixed(6).replace('.', ',') + ';' + fr.volts[i].toFixed(4).replace('.', ','));
     }
   });
   return lines.join('\r\n');
@@ -1238,12 +1528,359 @@ btnDlFrame.addEventListener('click', () => {
 setRecUI();
 
 // ════════════════════════════════════════════════════════════
+//  Экспорт графика в PNG
+// ════════════════════════════════════════════════════════════
+document.getElementById('btnPngExport').addEventListener('click', () => {
+  try {
+    const url = chart.toBase64Image('image/png', 1);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'osc_' + timestampForFilename() + '.png';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    log('Экспортирован PNG графика', 'inf');
+  } catch (e) {
+    log('Ошибка экспорта PNG: ' + e.message, 'err');
+  }
+});
+
+// ════════════════════════════════════════════════════════════
+//  Триггер
+// ════════════════════════════════════════════════════════════
+const trigLevelInput  = document.getElementById('trigLevel');
+const trigLevelSlider = document.getElementById('trigLevelSlider');
+
+document.querySelectorAll('#trigTabs .div-tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    triggerMode = tab.dataset.mode;
+    document.querySelectorAll('#trigTabs .div-tab').forEach(t => t.classList.remove('active'));
+    tab.classList.add('active');
+    renderView();
+    saveSettings();
+  });
+});
+
+function applyTrigLevel(v) {
+  triggerLevel = v;
+  trigLevelInput.value = v;
+  trigLevelSlider.value = Math.max(0, Math.min(5, v));
+  renderView();
+  saveSettings();
+}
+trigLevelInput.addEventListener('input',  () => { const v = parseFloat(trigLevelInput.value); if (!isNaN(v)) applyTrigLevel(v); });
+trigLevelSlider.addEventListener('input', () => applyTrigLevel(parseFloat(trigLevelSlider.value)));
+
+// ════════════════════════════════════════════════════════════
+//  Курсоры измерения
+// ════════════════════════════════════════════════════════════
+const btnCursors  = document.getElementById('btnCursors');
+const cursorInfo  = document.getElementById('cursorInfo');
+const curLine1    = document.getElementById('curLine1');
+const curLine2    = document.getElementById('curLine2');
+
+btnCursors.addEventListener('click', () => {
+  cursorMode = !cursorMode;
+  cursorPoints = [];
+  btnCursors.classList.toggle('on', cursorMode);
+  updateCursorOverlay();
+});
+
+function updateCursorOverlay() {
+  if (cursorPoints.length === 0) {
+    curLine1.classList.remove('show');
+    curLine2.classList.remove('show');
+    cursorInfo.textContent = cursorMode ? 'Курсоры включены — тапните по графику дважды, чтобы измерить' : '';
+    return;
+  }
+  const p0 = cursorPoints[0];
+  curLine1.style.left = chart.scales.x.getPixelForValue(p0.idx) + 'px';
+  curLine1.classList.add('show');
+  if (cursorPoints.length === 2) {
+    const p1 = cursorPoints[1];
+    curLine2.style.left = chart.scales.x.getPixelForValue(p1.idx) + 'px';
+    curLine2.classList.add('show');
+    const dtSec = Math.abs(p1.idx - p0.idx) * (currentDelay / 1e6);
+    const dv = Math.abs(p1.v - p0.v);
+    const freqTxt = dtSec > 0 ? (1 / dtSec).toFixed(dtSec < 0.001 ? 0 : 2) + ' Гц' : '—';
+    cursorInfo.textContent =
+      'Δt: ' + (dtSec * 1000).toFixed(3) + ' мс   ΔV: ' + dv.toFixed(3) + ' В   1/Δt: ' + freqTxt;
+  } else {
+    curLine2.classList.remove('show');
+    cursorInfo.textContent = 'Точка 1 поставлена — тапните ещё раз для второй';
+  }
+}
+
+scopeCanvas.addEventListener('click', (e) => {
+  if (!cursorMode || panDragMoved) return;
+  const rect = scopeCanvas.getBoundingClientRect();
+  const x = e.clientX - rect.left;
+  const idx = Math.round(chart.scales.x.getValueForPixel(x));
+  if (idx === null || isNaN(idx)) return;
+  const clamped = Math.max(0, Math.min(currentViewPoints - 1, idx));
+  const v = chart.data.datasets[0].data[clamped];
+  if (v === null || v === undefined) return;
+  if (cursorPoints.length >= 2) cursorPoints = [];
+  cursorPoints.push({ idx: clamped, v });
+  updateCursorOverlay();
+});
+
+// ════════════════════════════════════════════════════════════
+//  Зум / Пан по горизонтали
+//  Колесо мыши — зум; перетаскивание графика — пан (по истории);
+//  ползунок снизу — тоже пан, плюс кнопки ➖/➕ для зума.
+// ════════════════════════════════════════════════════════════
+const panSlider  = document.getElementById('panSlider');
+let panDragActive = false;
+let panDragStartX = 0;
+let panDragStartOffset = 0;
+let panDragMoved = false; // чтобы отличить перетаскивание от простого тапа (для курсоров)
+
+function setZoom(z) {
+  zoomLevel = Math.max(0.05, Math.min(32, z));
+  cursorPoints = [];
+  renderView();
+  saveSettings();
+}
+document.getElementById('btnZoomIn').addEventListener('click',  () => setZoom(zoomLevel * 1.4));
+document.getElementById('btnZoomOut').addEventListener('click', () => setZoom(zoomLevel / 1.4));
+
+// Зум колесом мыши, "прицеленный" в точку под курсором: та точка сигнала,
+// что была под указателем до прокрутки, остаётся под ним и после —
+// график увеличивается/уменьшается именно оттуда, а не от центра окна.
+function setZoomAtPoint(newZoomRaw, clientX) {
+  const rect = scopeCanvas.getBoundingClientRect();
+  const x = Math.max(0, Math.min(rect.width, clientX - rect.left));
+
+  // Индекс (внутри текущего окна) точки под курсором — по шкале графика.
+  let idxInView = chart.scales.x.getValueForPixel(x);
+  if (idxInView === null || isNaN(idxInView)) idxInView = currentViewPoints / 2;
+  idxInView = Math.max(0, Math.min(currentViewPoints - 1, idxInView));
+
+  // Абсолютный индекс этой точки в общей истории сэмплов.
+  const absIdx = lastStartIdx + idxInView;
+  // Её относительное положение внутри окна (0 — левый край, 1 — правый).
+  const fraction = currentViewPoints > 1 ? idxInView / (currentViewPoints - 1) : 0.5;
+
+  const newZoom = Math.max(0.05, Math.min(32, newZoomRaw));
+  const newViewPoints = Math.max(16, Math.min(HISTORY_MAX, Math.round(WIDTH / newZoom)));
+
+  // Подбираем новое начало окна так, чтобы absIdx остался на той же
+  // относительной позиции (под курсором) после смены масштаба.
+  let newStartIdx = Math.round(absIdx - fraction * (newViewPoints - 1));
+  const maxStartIdx = Math.max(0, sampleHistory.length - newViewPoints);
+  newStartIdx = Math.max(0, Math.min(maxStartIdx, newStartIdx));
+
+  // Зафиксировать окно на месте зума — так же, как перетаскивание графика
+  // уже останавливает "прямой эфир" (иначе окно тут же уедет обратно к живому краю).
+  liveFollow = false;
+  document.getElementById('btnPause').textContent = '▶';
+  panOffset = Math.max(0, Math.min(maxPanOffset(newViewPoints), sampleHistory.length - newViewPoints - newStartIdx));
+
+  zoomLevel = newZoom;
+  cursorPoints = [];
+  renderView();
+  saveSettings();
+}
+
+scopeCanvas.addEventListener('wheel', (e) => {
+  e.preventDefault();
+  setZoomAtPoint(zoomLevel * (e.deltaY < 0 ? 1.15 : 1 / 1.15), e.clientX);
+}, { passive: false });
+
+scopeCanvas.addEventListener('pointerdown', (e) => {
+  if (cursorMode) return;
+  panDragActive = true;
+  panDragMoved = false;
+  panDragStartX = e.clientX;
+  panDragStartOffset = panOffset;
+  try { scopeCanvas.setPointerCapture(e.pointerId); } catch (_) {}
+});
+scopeCanvas.addEventListener('pointermove', (e) => {
+  if (!panDragActive) return;
+  const dx = e.clientX - panDragStartX;
+  if (Math.abs(dx) > 4) panDragMoved = true;
+  if (!panDragMoved) return;
+  liveFollow = false;
+  document.getElementById('btnPause').textContent = '▶';
+  const pxPerSample = chartWrap.clientWidth / Math.max(1, currentViewPoints);
+  const deltaSamples = Math.round(dx / pxPerSample);
+  panOffset = Math.max(0, Math.min(maxPanOffset(currentViewPoints), panDragStartOffset + deltaSamples));
+  cursorPoints = [];
+  renderView();
+});
+scopeCanvas.addEventListener('pointerup',   () => { panDragActive = false; });
+scopeCanvas.addEventListener('pointercancel', () => { panDragActive = false; });
+
+panSlider.addEventListener('input', () => {
+  liveFollow = false;
+  document.getElementById('btnPause').textContent = '▶';
+  panOffset = parseInt(panSlider.value) || 0;
+  cursorPoints = [];
+  renderView();
+});
+
+// ════════════════════════════════════════════════════════════
+//  Демо-режим (генератор сигнала без Arduino)
+//  Полезен, чтобы проверить/показать интерфейс без подключённой платы.
+//  Данные идут в тот же processRawChunk(), что и реальные — поэтому
+//  запись, CSV, триггер, курсоры, зум/пан работают одинаково в обоих
+//  режимах.
+// ════════════════════════════════════════════════════════════
+const btnDemo      = document.getElementById('btnDemo');
+const demoCard     = document.getElementById('demoCard');
+const demoWaveformEl = document.getElementById('demoWaveform');
+const demoFreqEl     = document.getElementById('demoFreq');
+const demoNoiseEl    = document.getElementById('demoNoise');
+const DEMO_CHUNK  = 16;
+const DEMO_DELAY_US = 1000; // виртуальная частота дискретизации демо-сигнала: 1 кГц
+
+function demoTick() {
+  if (!demoMode) return;
+  const raw = new Array(DEMO_CHUNK);
+  const dtSample = DEMO_DELAY_US / 1e6;
+  for (let i = 0; i < DEMO_CHUNK; i++) {
+    demoPhase += 2 * Math.PI * demoFreq * dtSample;
+    let s;
+    if (demoWaveform === 'sine') {
+      s = 0.5 + 0.5 * Math.sin(demoPhase);
+    } else if (demoWaveform === 'square') {
+      s = Math.sin(demoPhase) >= 0 ? 1 : 0;
+    } else if (demoWaveform === 'triangle') {
+      s = 0.5 + (2 / Math.PI) * Math.asin(Math.sin(demoPhase)) * 0.5;
+    } else { // noise
+      s = Math.random();
+    }
+    if (demoWaveform !== 'noise' && demoNoise > 0) {
+      s += (Math.random() - 0.5) * 2 * demoNoise;
+    }
+    s = Math.max(0, Math.min(1, s));
+    raw[i] = Math.round(s * 1023);
+  }
+  processRawChunk(raw);
+}
+
+function startDemo() {
+  if (connected) { log('Сначала отключите USB', 'err'); return; }
+  demoMode = true;
+  demoPrevDelay = currentDelay;
+  applyDelay(DEMO_DELAY_US, false); // подставляем время оси под виртуальную частоту демо
+  sampleHistory = [];
+  liveFollow = true; panOffset = 0; cursorPoints = [];
+  btnDemo.classList.add('on');
+  demoCard.classList.add('show');
+  setStatus('demo');
+  log('Демо-режим запущен', 'inf');
+  demoTimer = setInterval(demoTick, 40); // ~25 чанков/сек
+  if (!rafHandle) rafHandle = requestAnimationFrame(renderLoop);
+}
+
+function stopDemo() {
+  demoMode = false;
+  clearInterval(demoTimer);
+  demoTimer = null;
+  btnDemo.classList.remove('on');
+  demoCard.classList.remove('show');
+  setStatus('');
+  log('Демо-режим остановлен', 'inf');
+  if (demoPrevDelay !== null) { applyDelay(demoPrevDelay, false); demoPrevDelay = null; }
+  if (!connected && rafHandle) { cancelAnimationFrame(rafHandle); rafHandle = null; }
+}
+
+btnDemo.addEventListener('click', () => { demoMode ? stopDemo() : startDemo(); });
+demoWaveformEl.addEventListener('change', () => { demoWaveform = demoWaveformEl.value; });
+demoFreqEl.addEventListener('input', () => { const v = parseFloat(demoFreqEl.value); if (v > 0) demoFreq = v; });
+demoNoiseEl.addEventListener('input', () => { const v = parseFloat(demoNoiseEl.value); if (!isNaN(v)) demoNoise = Math.max(0, v); });
+
+// setStatus нужно уметь показывать и статус демо-режима отдельным цветом
+const _origSetStatus = setStatus;
+setStatus = function (s) {
+  if (s === 'demo') {
+    pillEl.className = 'pill demo';
+    dotEl.className  = 'dot demo';
+    pillEl.textContent = 'Demo-режим';
+    btnCon.textContent = 'Подключить USB';
+    btnCon.classList.remove('disc');
+    return;
+  }
+  _origSetStatus(s);
+};
+
+// ════════════════════════════════════════════════════════════
+//  Сохранение настроек между визитами (localStorage)
+//  Хранится только конфигурация интерфейса — никаких сырых данных
+//  осциллографа, так что объём небольшой и приватность не страдает.
+// ════════════════════════════════════════════════════════════
+const SETTINGS_KEY = 'osc_app_settings_v1';
+
+function saveSettings() {
+  try {
+    const s = {
+      delay: currentDelay, width: WIDTH,
+      divMode, vmax: vmaxInput.value, r1: r1Input.value, r2: r2Input.value,
+      vrangeAuto, vrangeMin: vrangeMinEl.value, vrangeMax: vrangeMaxEl.value,
+      triggerMode, triggerLevel, zoomLevel,
+      demoWaveform, demoFreq, demoNoise
+    };
+    localStorage.setItem(SETTINGS_KEY, JSON.stringify(s));
+  } catch (_) { /* localStorage может быть недоступен (приватный режим и т.п.) — не критично */ }
+}
+
+function loadSettings() {
+  try {
+    const raw = localStorage.getItem(SETTINGS_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch (_) { return null; }
+}
+
+// Довешиваем сохранение к уже существующим обработчикам делителя/диапазона
+[vmaxInput, r1Input, r2Input].forEach(el => el.addEventListener('change', saveSettings));
+vrangeAutoBtn.addEventListener('click', saveSettings);
+vrangeMinEl.addEventListener('change', saveSettings);
+vrangeMaxEl.addEventListener('change', saveSettings);
+
+// ════════════════════════════════════════════════════════════
 //  Инициализация
 // ════════════════════════════════════════════════════════════
-applyDelay(500, false);
-applyWidth(512, false);
-calcDivider();
-applyVRange(); // применяем начальный авто-режим оси Y
+const saved = loadSettings();
+if (saved) {
+  applyDelay(saved.delay || 500, false);
+  applyWidth(saved.width || 512, false);
+
+  if (saved.divMode) {
+    const tab = document.querySelector('#divTabs .div-tab[data-mode="' + saved.divMode + '"]');
+    if (tab) tab.click();
+  }
+  if (saved.vmax) vmaxInput.value = saved.vmax;
+  if (saved.r1)   r1Input.value = saved.r1;
+  if (saved.r2)   r2Input.value = saved.r2;
+  calcDivider();
+
+  vrangeAuto = saved.vrangeAuto !== undefined ? saved.vrangeAuto : true;
+  vrangeAutoBtn.classList.toggle('active', vrangeAuto);
+  vrangeStatus.textContent = vrangeAuto ? 'Автоподстройка включена' : 'Ручной диапазон';
+  vrangeMinEl.disabled = vrangeAuto; vrangeMaxEl.disabled = vrangeAuto;
+  if (saved.vrangeMin !== undefined) vrangeMinEl.value = saved.vrangeMin;
+  if (saved.vrangeMax !== undefined) vrangeMaxEl.value = saved.vrangeMax;
+  applyVRange();
+
+  if (saved.triggerMode) {
+    const tab = document.querySelector('#trigTabs .div-tab[data-mode="' + saved.triggerMode + '"]');
+    if (tab) tab.click();
+  }
+  if (saved.triggerLevel !== undefined) applyTrigLevel(saved.triggerLevel);
+  if (saved.zoomLevel) setZoom(saved.zoomLevel);
+
+  if (saved.demoWaveform) { demoWaveform = saved.demoWaveform; demoWaveformEl.value = saved.demoWaveform; }
+  if (saved.demoFreq)     { demoFreq = saved.demoFreq; demoFreqEl.value = saved.demoFreq; }
+  if (saved.demoNoise !== undefined) { demoNoise = saved.demoNoise; demoNoiseEl.value = saved.demoNoise; }
+} else {
+  applyDelay(500, false);
+  applyWidth(512, false);
+  calcDivider();
+  applyVRange(); // применяем начальный авто-режим оси Y
+}
+renderView();
 </script>
 </body>
 </html>
