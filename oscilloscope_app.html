@@ -101,6 +101,7 @@
   .v-avg { color: var(--green); }
   .v-vpp { color: var(--text); }
   .v-hz { color: var(--red); }
+  .burst-unit-sm { font-size: 14px; }
 
   /* ── Controls ── */
   .card {
@@ -165,9 +166,9 @@
   .div-unit { font-size: 16.8px; color: var(--muted); white-space: nowrap; }
   .div-hint { font-size: 15.4px; color: var(--muted); margin-top: 6px; line-height: 1.5; }
   .div-result {
-    margin-top: 8px; padding: 6px 10px; border-radius: 6px;
+    padding: 6px 10px; border-radius: 6px;
     background: rgba(210,153,34,.08); border: 1px solid rgba(210,153,34,.25);
-    font-size: 16.8px; font-weight: 600; color: var(--amber);
+    font-size: 15.4px; font-weight: 600; color: var(--amber); white-space: nowrap;
   }
 
   /* buttons */
@@ -206,11 +207,8 @@
   .chart-resize-handle:hover { color: var(--muted); }
 
   /* voltage range card */
-  .vrange-card {
-    background: var(--card); border: 1px solid var(--border);
-    border-radius: var(--r); padding: 12px;
-  }
-  .vrange-row { display: flex; align-items: center; gap: 8px; margin-top: 6px; }
+  .vrange-grid { display: ruby; align-items: center; gap: 16px; }
+  .vrange-row { display: flex; align-items: center; gap: 8px; flex: 1; }
   .vrange-row label { font-size: 16.8px; color: var(--muted); flex: 1; }
   .vrange-row input[type=number] {
     width: 80px; background: var(--surface); border: 1px solid var(--border);
@@ -280,7 +278,7 @@
   .btn-demo.on { background: var(--blue); color: #0d1117; }
   .pill.demo { color: var(--blue); border-color: var(--blue); }
   .dot.demo  { background: var(--blue); box-shadow: 0 0 7px var(--blue); }
-  .demo-card { display: none; }
+  .demo-card { display: none; margin: 10px 12px 0; }
   .demo-card.show { display: block; }
   .demo-row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-top: 8px; }
   .demo-row select {
@@ -294,7 +292,7 @@
   }
 
   /* ── Trigger ── */
-  .trigger-card input[type=range] { accent-color: var(--red); }
+  .trigger-card input[type=range] { accent-color: var(--red); width: 100%; margin-top: 8px; }
   .trigger-row { display: flex; align-items: center; gap: 8px; margin-top: 10px; }
   .trigger-row label { font-size: 16.8px; color: var(--muted); flex: 1; }
   .trigger-row input[type=number] {
@@ -344,6 +342,19 @@
     font-size: 14px; color: var(--muted); white-space: nowrap; min-width: 76px; text-align: right;
   }
   .pz-label.live { color: var(--green); }
+
+  /* ── Shared header row (title + hint/action on the right) ── */
+  .card-header {
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 8px; margin-bottom: 10px;
+  }
+  .card-header .card-title { margin-bottom: 0; }
+  .card-header-actions { display: flex; align-items: center; gap: 8px; }
+  .hint-text { font-size: 15.4px; color: var(--muted); }
+
+  /* header action buttons sit in a compact bar next to the logo */
+  header .action-row { flex: 0 0 auto; }
+  header .btn { padding: 7px 10px; font-size: 16.8px; }
 </style>
 </head>
 <body>
@@ -353,18 +364,18 @@
     <div class="dot" id="dot"></div>
     Осциллограф
   </div>
-      <div class="action-row">
-      <button class="btn btn-connect" id="btnConnect" style="padding-bottom: 1px;padding-top: 1px;">Подключить USB</button>
-      <button class="btn btn-demo" id="btnDemo" style="padding-bottom: 1px;padding-top: 1px;" title="Демо-режим без Arduino">🧪 Demo</button>
-      <button class="btn btn-pause" id="btnPause" style="padding-bottom: 1px;padding-top: 1px;" title="Заморозить/оживить график">⏸</button>
-    </div>
+  <div class="action-row">
+    <button class="btn btn-connect" id="btnConnect">Подключить USB</button>
+    <button class="btn btn-demo" id="btnDemo" title="Демо-режим без Arduino">🧪 Demo</button>
+    <button class="btn btn-pause" id="btnPause" title="Заморозить/оживить график">⏸</button>
+  </div>
   <div class="pill" id="pill">Не подключено</div>
 </header>
 
 <!-- Platform notices inserted here by JS -->
 <div id="notices"></div>
 
-<div class="card demo-card" id="demoCard" style="margin: 10px 12px 0;">
+<div class="card demo-card" id="demoCard">
   <div class="card-title">Демо-режим (генератор сигнала без Arduino)</div>
   <div class="demo-row">
     <label>Форма</label>
@@ -390,7 +401,7 @@
     <div class="stat"><div class="stat-label">Max, В</div><div class="stat-value v-max" id="sMax">—</div></div>
     <div class="stat"><div class="stat-label">Avg, В</div><div class="stat-value v-avg" id="sAvg">—</div></div>
     <div class="stat"><div class="stat-label">Vpp, В</div><div class="stat-value v-vpp" id="sVpp">—</div></div>
-	<div class="stat"><div class="stat-label">Частота</div><div class="stat-value v-hz"><span id="burstFreq">—</span> <span id="burstUnit" style="font-size:14px;">Гц</span></div></div>
+    <div class="stat"><div class="stat-label">Частота</div><div class="stat-value v-hz"><span id="burstFreq">—</span> <span class="burst-unit-sm" id="burstUnit">Гц</span></div></div>
   </div>
 
   <!-- Chart -->
@@ -418,28 +429,26 @@
   </div>
 
   <!-- Voltage Range -->
-  <div class="vrange-card">
-	<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
-		<div class="card-title">Диапазон графика (ось Y)</div>
-		<div style="margin-top:8px; display:flex; gap:8px; align-items:center;">
-			<span style="font-size:15.4px; color:var(--muted);" id="vrangeStatus">Автоподстройка включена</span>
-			<button class="vrange-auto-btn active" id="vrangeAutoBtn">⟳ Авто</button>
-		</div>
-	</div>
-    
-	<div style="display:flex;align-items:center;justify-content:start;gap:8px;">
-		<div class="vrange-row">
-		  <label style="margin-right:10px;">Мин. напряжение</label>
-		  <input type="number" id="vrangeMin" value="0" step="0.1">
-		  <span class="vrange-unit">В</span>
-		</div>
-		<div class="vrange-row">
-		  <label>Макс. напряжение</label>
-		  <input type="number" id="vrangeMax" value="5" step="0.1">
-		  <span class="vrange-unit">В</span>
-		</div>
-	</div>
-    
+  <div class="card">
+    <div class="card-header">
+      <div class="card-title">Диапазон графика (ось Y)</div>
+      <div class="card-header-actions">
+        <span class="hint-text" id="vrangeStatus">Автоподстройка включена</span>
+        <button class="vrange-auto-btn active" id="vrangeAutoBtn">⟳ Авто</button>
+      </div>
+    </div>
+    <div class="vrange-grid">
+      <div class="vrange-row" style="margin-right: 15px">
+        <label>Мин. напряжение</label>
+        <input type="number" id="vrangeMin" value="0" step="0.1">
+        <span class="vrange-unit">В</span>
+      </div>
+      <div class="vrange-row">
+        <label>Макс. напряжение</label>
+        <input type="number" id="vrangeMax" value="5" step="0.1">
+        <span class="vrange-unit">В</span>
+      </div>
+    </div>
   </div>
 
   <!-- Trigger -->
@@ -455,61 +464,54 @@
       <input type="number" id="trigLevel" min="-50" max="50" step="0.05" value="2.5">
       <span class="trigger-unit">В</span>
     </div>
-    <input type="range" id="trigLevelSlider" min="0" max="5" step="0.02" value="2.5" style="width:100%;margin-top:8px;">
+    <input type="range" id="trigLevelSlider" min="0" max="5" step="0.02" value="2.5">
     <div class="trigger-status" id="trigStatus">Триггер выключен — окно графика просто едет по последним точкам</div>
   </div>
 
   <!-- Controls -->
   <div class="card">
-	<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
-		<div class="card-title">Задержка между сэмплами</div>
-		<span style="font-size:15.4px;color:var(--muted)" id="timeHint"></span>
-	</div>
+    <div class="card-header">
+      <div class="card-title">Задержка между сэмплами</div>
+      <span class="hint-text" id="timeHint"></span>
+    </div>
     <div class="delay-wrap">
       <div class="delay-top">
         <label for="slider">мкс</label>
         <input type="range" id="slider" min="1" max="5000" value="500" step="1">
-		  <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
-			<div class="delay-input-wrap">
-			  <input type="number" id="delayNum" min="1" max="99999" value="500">
-			  <span class="delay-unit">мкс</span>
-			</div>
-			
-		  </div>
-	  </div>
+      </div>
+      <div class="delay-input-wrap">
+        <input type="number" id="delayNum" min="1" max="99999" value="500">
+        <span class="delay-unit">мкс</span>
+      </div>
       <div class="presets" id="presets"></div>
     </div>
   </div>
 
   <!-- Chart width -->
   <div class="card">
-	<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
-		<div class="card-title">Ширина графика</div>
-		<span style="font-size:15.4px;color:var(--muted)" id="widthHint"></span>
-	</div>
-
+    <div class="card-header">
+      <div class="card-title">Ширина графика</div>
+      <span class="hint-text" id="widthHint"></span>
+    </div>
     <div class="delay-wrap">
       <div class="delay-top">
         <label for="widthSlider">точек</label>
         <input type="range" id="widthSlider" min="32" max="4096" value="512" step="1">
-      
-			<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
-			  <div class="delay-input-wrap">
-				<input type="number" id="widthNum" min="32" max="4096" value="512">
-				<span class="delay-unit">точек</span>
-			  </div>
-			</div>
-		</div>
+      </div>
+      <div class="delay-input-wrap">
+        <input type="number" id="widthNum" min="32" max="4096" value="512">
+        <span class="delay-unit">точек</span>
+      </div>
       <div class="presets" id="widthPresets"></div>
     </div>
   </div>
 
   <!-- Voltage divider -->
   <div class="card">
-	<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
-		<div class="card-title">Делитель напряжения</div>
-		<div class="div-result" id="divResult" style="margin-top: 0px;margin-bottom: 8px;">Коэффициент: 1.00 ×　Макс: 5.0 В</div>
-	</div>
+    <div class="card-header">
+      <div class="card-title">Делитель напряжения</div>
+      <div class="div-result" id="divResult">Коэффициент: 1.00 ×　Макс: 5.0 В</div>
+    </div>
     <div class="div-tabs" id="divTabs">
       <button class="div-tab active" data-mode="none">Без делителя</button>
       <button class="div-tab" data-mode="vmax">Макс. напряжение</button>
@@ -543,13 +545,13 @@
 
   <!-- Recording -->
   <div class="card">
-	<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
-		<div class="card-title">Запись данных</div>
-		<div class="rec-status-row">
-			<div class="rec-info" id="recInfo">Не записывается</div>
-			<div class="rec-dot" id="recDot"></div>
-		</div>
-	</div>
+    <div class="card-header">
+      <div class="card-title">Запись данных</div>
+    </div>
+    <div class="rec-status-row">
+      <div class="rec-info" id="recInfo">Не записывается</div>
+      <div class="rec-dot" id="recDot"></div>
+    </div>
     <div class="rec-row">
       <label>Лимит точек</label>
       <input type="number" id="recMaxFrames" min="160" max="5000000" value="500000" step="1000">
@@ -1108,17 +1110,33 @@ function detectBurstFreq(volts) {
   // Порог — 50% размаха выше минимума
   const thresh = mn + vpp * 0.5;
   let crossings = 0;
+  let firstIdx = -1, lastIdx = -1;
   for (let i = 1; i < volts.length; i++) {
-    if (volts[i - 1] < thresh && volts[i] >= thresh) crossings++;
+    if (volts[i - 1] < thresh && volts[i] >= thresh) {
+      crossings++;
+      if (firstIdx === -1) firstIdx = i;
+      lastIdx = i;
+    }
   }
   if (crossings < 1) {
     document.getElementById('burstFreq').textContent = '0';
     document.getElementById('burstUnit').textContent = 'всплесков/кадр';
     return;
   }
-  // Частота всплесков в кадре (сэмплов на кадр * мкс/сэмпл = мкс на кадр)
-  const frameDurUs = volts.length * currentDelay;
-  const freqHz = (crossings / frameDurUs) * 1e6;
+  if (crossings < 2) {
+    // Одного пересечения недостаточно, чтобы измерить период.
+    document.getElementById('burstFreq').textContent = '…';
+    document.getElementById('burstUnit').textContent = 'нужно ≥2 циклов в окне';
+    return;
+  }
+  // Частота считается по времени МЕЖДУ первым и последним пересечением
+  // порога (а не по всей длине окна) — так частичные, обрезанные с краёв
+  // периоды не искажают оценку, и она не "прыгает" при изменении
+  // ширины/зума графика (раньше делили crossings на длину ВСЕГО окна,
+  // а длина окна как раз и определяется разрешением/зумом).
+  const spanUs = (lastIdx - firstIdx) * currentDelay;
+  const periods = crossings - 1;
+  const freqHz = (periods / spanUs) * 1e6;
   const freqEl = document.getElementById('burstFreq');
   const unitEl = document.getElementById('burstUnit');
   if (freqHz >= 1000) {
